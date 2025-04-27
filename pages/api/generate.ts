@@ -31,28 +31,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       fullPrompt = `Write a professional LinkedIn post about: ${prompt}`;
       break;
     case 'YouTube Video Description':
-      fullPrompt = `Write an engaging YouTube video description for: ${prompt}`;
+      fullPrompt = `Write a YouTube video description for: ${prompt}`;
       break;
     case 'TikTok Hook':
-      fullPrompt = `Write a short TikTok video hook idea for: ${prompt}`;
+      fullPrompt = `Write a viral TikTok hook for: ${prompt}`;
       break;
     case 'Hashtag Generator':
       fullPrompt = `Generate trending hashtags for: ${prompt}`;
       break;
     case 'Facebook Post':
-      fullPrompt = `Write a Facebook post about: ${prompt}`;
+      fullPrompt = `Write an engaging Facebook post about: ${prompt}`;
       break;
     case 'Twitter Post':
-      fullPrompt = `Write a tweet about: ${prompt}`;
+      fullPrompt = `Write a short and catchy tweet about: ${prompt}`;
       break;
-    case 'WhatsApp Message':
-      fullPrompt = `Write a WhatsApp promotional message for: ${prompt}`;
+    case 'WhatsApp Status':
+      fullPrompt = `Write a creative WhatsApp status about: ${prompt}`;
       break;
     case 'Reddit Post':
-      fullPrompt = `Write a Reddit post about: ${prompt}`;
+      fullPrompt = `Write an interesting Reddit post about: ${prompt}`;
       break;
-    case 'Pinterest Pin Description':
-      fullPrompt = `Write a Pinterest pin description for: ${prompt}`;
+    case 'Pinterest Description':
+      fullPrompt = `Write an attractive Pinterest pin description for: ${prompt}`;
       break;
     default:
       fullPrompt = prompt;
@@ -65,9 +65,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       messages: [{ role: 'user', content: fullPrompt }],
     });
 
-    res.status(200).json({ result: completion.data.choices[0].message?.content });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Something went wrong' });
+    const generatedText = completion.data.choices[0].message?.content || '';
+
+    return res.status(200).json({ result: generatedText });
+  } catch (error: any) {
+    console.error('OpenAI API error:', error.response?.data || error.message);
+    return res.status(500).json({ error: 'Error generating content' });
   }
 }
+
