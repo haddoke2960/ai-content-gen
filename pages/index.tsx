@@ -1,185 +1,155 @@
-import { useState, useEffect } from 'react';
-import { db } from '../firebase';
-import { collection, addDoc } from 'firebase/firestore';
+
+
+import { useState } from 'react';
 
 export default function Home() {
-  const [contentType, setContentType] = useState('Instagram Caption');
+  const [contentType, setContentType] = useState('');
   const [prompt, setPrompt] = useState('');
   const [generatedResult, setGeneratedResult] = useState('');
   const [history, setHistory] = useState<string[]>([]);
-  const [darkMode, setDarkMode] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    const saved = localStorage.getItem('caption-history');
-    if (saved) {
-      setHistory(JSON.parse(saved));
-    }
-  }, []);
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) {
-      setError('Please enter a topic before generating.');
+    if (!prompt || !contentType) {
+      setGeneratedResult('Error: Missing content type or prompt.');
       return;
     }
 
-    setError('');
-    setLoading(true);
-    setGeneratedResult('');
-
     try {
-      const res = await fetch('/api/ai', {
+      const response = await fetch('/api/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          type: contentType,
-          prompt: prompt,
+          contentType,
+          prompt,
         }),
       });
 
-      const data = await res.json();
+      const data = await response.json();
 
-      if (res.ok) {
+      if (response.ok) {
         setGeneratedResult(data.result);
 
         // Save to Firebase
-        await addDoc(collection(db, "history"), {
-          prompt: prompt,
-          result: data.result,
-          createdAt: new Date(),
+        await fetch('/api/saveToHistory', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            prompt,
+            result: data.result,
+          }),
         });
 
         // Update local history
-        setHistory((prev) => {
-          const updated = [data.result, ...prev];
-          localStorage.setItem('caption-history', JSON.stringify(updated));
-          return updated;
-        });
+        setHistory((prev) => [data.result, ...prev]);
       } else {
-        setGeneratedResult(`Error: ${data.error}`);
+        setGeneratedResult('Something went wrong. Try again.');
       }
     } catch (error) {
       console.error('Error:', error);
       setGeneratedResult('Something went wrong. Try again.');
     }
-
-    setLoading(false);
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(generatedResult);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (generatedResult) {
+      navigator.clipboard.writeText(generatedResult);
+      alert('Copied to clipboard!');
+    }
   };
 
-  const handleDownload = () => {
-    const allText = history.join('\r\n');
-    const blob = new Blob([allText], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'captions.txt';
-    link.click();
-    URL.revokeObjectURL(url);
+  const shareOnFacebook = () => {
+    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(generatedResult)}`;
+    window.open(url, '_blank');
   };
 
-  const handleClearHistory = () => {
-    localStorage.removeItem('caption-history');
-    setHistory([]);
+  const shareOnTwitter = () => {
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(generatedResult)}`;
+    window.open(url, '_blank');
   };
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
+  const shareOnWhatsApp = () => {
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(generatedResult)}`;
+    window.open(url, '_blank');
+  };
+
+  const shareOnLinkedIn = () => {
+    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}&summary=${encodeURIComponent(generatedResult)}`;
+    window.open(url, '_blank');
+  };
+
+  const shareOnReddit = () => {
+    const url = `https://reddit.com/submit?title=${encodeURIComponent(generatedResult)}&url=${encodeURIComponent(window.location.href)}`;
+    window.open(url, '_blank');
+  };
+
+  const shareOnPinterest = () => {
+    const url = `https://pinterest.com/pin/create/button/?description=${encodeURIComponent(generatedResult)}&url=${encodeURIComponent(window.location.href)}`;
+    window.open(url, '_blank');
   };
 
   return (
-    <div
-      style={{
-        padding: '2rem',
-        fontFamily: 'Arial',
-        backgroundColor: darkMode ? '#111' : '#fff',
-        color: darkMode ? '#ffffff' : '#000',
-        minHeight: '100vh',
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>AI Content Generator</h1>
-        <button onClick={toggleDarkMode}>
-          {darkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
-        </button>
+    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+      <h1>AI Content Generator</h1>
+
+      <div style={{ marginBottom: '10px' }}>
+        <label>Choose Content Type:</label>
+        <select value={contentType} onChange={(e) => setContentType(e.target.value)}>
+          <option value="">Select a type</option>
+          <option value="Instagram Caption">Instagram Caption</option>
+          <option value="Product Description">Product Description</option>
+          <option value="LinkedIn Post">LinkedIn Post</option>
+          <option value="YouTube Video Description">YouTube Video Description</option>
+          <option value="TikTok Hook">TikTok Hook</option>
+          <option value="Hashtag Generator">Hashtag Generator</option>
+        </select>
       </div>
 
-      <label>Choose Content Type:</label>
-      <select value={contentType} onChange={(e) => setContentType(e.target.value)}>
-        <option>Instagram Caption</option>
-        <option>Product Description</option>
-        <option>LinkedIn Post</option>
-        <option>YouTube Video Description</option>
-        <option>TikTok Hook</option>
-        <option>Hashtag Generator</option>
-      </select>
-
-      <br /><br />
-
-      <label>Describe your topic:</label>
-      <textarea
-        value={prompt}
-        onChange={(e) => setPrompt(e.target.value)}
-        rows={3}
-        cols={60}
-        placeholder="e.g. tips for selling handmade soap"
-      />
-
-      <br /><br />
-
-      {error && <div style={{ color: 'red' }}>{error}</div>}
-
-      <button onClick={handleGenerate}>
-        {loading ? 'Generating...' : 'Generate'}
-      </button>
-
-      <br /><br />
-
-      <h2>Generated Result:</h2>
-      <div style={{ border: '1px solid #ccc', padding: '1rem', minHeight: '100px' }}>
-        {generatedResult || 'Nothing yet'}
+      <div style={{ marginBottom: '10px' }}>
+        <label>Describe your topic:</label>
+        <input
+          type="text"
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder="e.g. tips for selling handmade soap"
+          style={{ width: '100%' }}
+        />
       </div>
 
-      <div>
-        <br />
-        <button onClick={handleCopy}>
-          {copied ? 'Copied!' : 'Copy'}
-        </button>
-      </div>
+      <button onClick={handleGenerate}>Generate</button>
 
-      <h3 style={{ marginTop: '2rem' }}>Previous Captions:</h3>
-      <ul>
-        {history.length === 0 && <li>No previous captions yet.</li>}
-        {history.map((item, index) => (
-          <li key={index} style={{ marginBottom: '0.5rem' }}>
-            <div style={{ border: '1px solid #ccc', padding: '0.5rem' }}>
-              {item}
+      <div style={{ marginTop: '20px' }}>
+        <h3>Generated Result:</h3>
+        <p>{generatedResult || 'Nothing yet'}</p>
+
+        {generatedResult && (
+          <>
+            <button onClick={handleCopy}>Copy</button>
+
+            <div style={{ marginTop: '10px' }}>
+              <h4>Share:</h4>
+              <button onClick={shareOnFacebook}>Facebook</button>
+              <button onClick={shareOnTwitter}>Twitter</button>
+              <button onClick={shareOnWhatsApp}>WhatsApp</button>
+              <button onClick={shareOnLinkedIn}>LinkedIn</button>
+              <button onClick={shareOnReddit}>Reddit</button>
+              <button onClick={shareOnPinterest}>Pinterest</button>
             </div>
-          </li>
-        ))}
-      </ul>
+          </>
+        )}
+      </div>
 
-      {history.length > 0 && (
-        <div style={{ marginTop: '1rem' }}>
-          <button onClick={handleDownload}>
-            Download Captions
-          </button>
-          <button onClick={handleClearHistory} style={{ marginLeft: '1rem' }}>
-            Clear History
-          </button>
-        </div>
-      )}
+      <div style={{ marginTop: '40px' }}>
+        <h3>Previous Captions:</h3>
+        <ul>
+          {history.map((item, index) => (
+            <li key={index}>"{item}"</li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
-
