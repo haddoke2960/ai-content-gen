@@ -1,5 +1,4 @@
 
-
 import { useState } from 'react';
 
 export default function Home() {
@@ -17,33 +16,20 @@ export default function Home() {
     try {
       const response = await fetch('/api/generate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contentType,
-          prompt,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentType, prompt }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
         setGeneratedResult(data.result);
-
-        // Save to Firebase
+        // Save to history
         await fetch('/api/saveToHistory', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            prompt,
-            result: data.result,
-          }),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, result: data.result }),
         });
-
-        // Update local history
         setHistory((prev) => [data.result, ...prev]);
       } else {
         setGeneratedResult('Something went wrong. Try again.');
@@ -61,8 +47,9 @@ export default function Home() {
     }
   };
 
+  // Sharing Functions
   const shareOnFacebook = () => {
-    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(generatedResult)}`;
+    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(generatedResult)}`;
     window.open(url, '_blank');
   };
 
@@ -77,17 +64,17 @@ export default function Home() {
   };
 
   const shareOnLinkedIn = () => {
-    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}&summary=${encodeURIComponent(generatedResult)}`;
+    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(generatedResult)}`;
     window.open(url, '_blank');
   };
 
   const shareOnReddit = () => {
-    const url = `https://reddit.com/submit?title=${encodeURIComponent(generatedResult)}&url=${encodeURIComponent(window.location.href)}`;
+    const url = `https://reddit.com/submit?title=${encodeURIComponent(generatedResult)}`;
     window.open(url, '_blank');
   };
 
   const shareOnPinterest = () => {
-    const url = `https://pinterest.com/pin/create/button/?description=${encodeURIComponent(generatedResult)}&url=${encodeURIComponent(window.location.href)}`;
+    const url = `https://pinterest.com/pin/create/button/?description=${encodeURIComponent(generatedResult)}`;
     window.open(url, '_blank');
   };
 
@@ -97,7 +84,7 @@ export default function Home() {
 
       <div style={{ marginBottom: '10px' }}>
         <label>Choose Content Type:</label>
-        <select value={contentType} onChange={(e) => setContentType(e.target.value)}>
+        <select value={contentType} onChange={(e) => setContentType(e.target.value)} style={{ width: '100%', padding: '8px' }}>
           <option value="">Select a type</option>
           <option value="Instagram Caption">Instagram Caption</option>
           <option value="Product Description">Product Description</option>
@@ -105,6 +92,11 @@ export default function Home() {
           <option value="YouTube Video Description">YouTube Video Description</option>
           <option value="TikTok Hook">TikTok Hook</option>
           <option value="Hashtag Generator">Hashtag Generator</option>
+          <option value="Facebook Post">Facebook Post</option>
+          <option value="Twitter Post">Twitter Post</option>
+          <option value="WhatsApp Message">WhatsApp Message</option>
+          <option value="Reddit Post">Reddit Post</option>
+          <option value="Pinterest Pin Description">Pinterest Pin Description</option>
         </select>
       </div>
 
@@ -115,11 +107,11 @@ export default function Home() {
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           placeholder="e.g. tips for selling handmade soap"
-          style={{ width: '100%' }}
+          style={{ width: '100%', padding: '8px' }}
         />
       </div>
 
-      <button onClick={handleGenerate}>Generate</button>
+      <button onClick={handleGenerate} style={{ padding: '10px 20px', fontWeight: 'bold' }}>Generate</button>
 
       <div style={{ marginTop: '20px' }}>
         <h3>Generated Result:</h3>
@@ -127,7 +119,7 @@ export default function Home() {
 
         {generatedResult && (
           <>
-            <button onClick={handleCopy}>Copy</button>
+            <button onClick={handleCopy} style={{ marginTop: '10px' }}>Copy</button>
 
             <div style={{ marginTop: '10px' }}>
               <h4>Share:</h4>
@@ -146,7 +138,7 @@ export default function Home() {
         <h3>Previous Captions:</h3>
         <ul>
           {history.map((item, index) => (
-            <li key={index}>"{item}"</li>
+            <li key={index}>{item}</li>
           ))}
         </ul>
       </div>
