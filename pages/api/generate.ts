@@ -1,6 +1,3 @@
-
-
-
 import type { NextApiRequest, NextApiResponse } from 'next';
 const OpenAI = require("openai");
 
