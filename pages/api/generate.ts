@@ -1,9 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-const OpenAI = require("openai");
+import { Configuration, OpenAIApi } from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+const configuration = new Configuration({
+  apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
 });
+
+const openai = new OpenAIApi(configuration);
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -28,26 +30,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     case 'LinkedIn Post':
       fullPrompt = `Write a professional LinkedIn post about: ${prompt}`;
       break;
+    case 'YouTube Video Description':
+      fullPrompt = `Write an engaging YouTube video description for: ${prompt}`;
+      break;
+    case 'TikTok Hook':
+      fullPrompt = `Write a short TikTok video hook idea for: ${prompt}`;
+      break;
+    case 'Hashtag Generator':
+      fullPrompt = `Generate trending hashtags for: ${prompt}`;
+      break;
+    case 'Facebook Post':
+      fullPrompt = `Write a Facebook post about: ${prompt}`;
+      break;
+    case 'Twitter Post':
+      fullPrompt = `Write a tweet about: ${prompt}`;
+      break;
+    case 'WhatsApp Message':
+      fullPrompt = `Write a WhatsApp promotional message for: ${prompt}`;
+      break;
+    case 'Reddit Post':
+      fullPrompt = `Write a Reddit post about: ${prompt}`;
+      break;
+    case 'Pinterest Pin Description':
+      fullPrompt = `Write a Pinterest pin description for: ${prompt}`;
+      break;
     default:
       fullPrompt = prompt;
       break;
   }
 
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await openai.createChatCompletion({
       model: 'gpt-3.5-turbo',
-      messages: [
-        {
-          role: 'user',
-          content: fullPrompt,
-        },
-      ],
+      messages: [{ role: 'user', content: fullPrompt }],
     });
 
-    const output = completion.choices[0].message.content;
-    res.status(200).json({ result: output });
-  } catch (error: any) {
-    console.error('OpenAI error:', error);
-    res.status(500).json({ error: 'Something went wrong with OpenAI' });
+    res.status(200).json({ result: completion.data.choices[0].message?.content });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Something went wrong' });
   }
 }
