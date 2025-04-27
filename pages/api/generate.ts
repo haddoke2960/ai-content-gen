@@ -1,13 +1,10 @@
-
 import type { NextApiRequest, NextApiResponse } from "next";
-import { Configuration, OpenAIApi } from "openai";
+import OpenAI from "openai";
 
 // Setup OpenAI with your API key
-const configuration = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-const openai = new OpenAIApi(configuration);
 
 // API Route Handler
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -63,7 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const completion = await openai.createChatCompletion({
+    const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
         {
@@ -73,10 +70,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ],
     });
 
-    const output = completion.data.choices[0].message?.content;
+    const output = completion.choices[0]?.message?.content;
+
     res.status(200).json({ result: output });
   } catch (error: any) {
-    console.error("OpenAI API Error:", error.response?.data || error.message);
+    console.error("OpenAI API Error:", error);
     res.status(500).json({ error: "Failed to generate content" });
   }
 }
