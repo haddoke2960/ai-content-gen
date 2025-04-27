@@ -1,27 +1,26 @@
-
-import type { NextApiRequest, NextApiResponse } from "next";
-import OpenAI from "openai";
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { Configuration, OpenAIApi } from 'openai';
 
 // Setup OpenAI with your API key
-const openai = new OpenAI({
+const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// API Route Handler
+const openai = new OpenAIApi(configuration);
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { prompt, type } = req.body;
-
-  if (!prompt || !type) {
-    return res.status(400).json({ error: "Missing prompt or contentType" });
+  const { prompt, contentType } = req.body; // <-- FIXED HERE
+  if (!prompt || !contentType) {
+    return res.status(400).json({ error: 'Missing prompt or contentType' });
   }
 
   let fullPrompt = "";
 
-  switch (type) {
+  switch (contentType) {  // <-- FIXED HERE
     case "Instagram Caption":
       fullPrompt = `Write a catchy Instagram caption for this topic: ${prompt}`;
       break;
@@ -61,7 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
       messages: [
         {
@@ -71,11 +70,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ],
     });
 
-    const output = completion.choices[0]?.message?.content;
-
+    const output = completion.data.choices[0]?.message?.content;
     res.status(200).json({ result: output });
   } catch (error: any) {
-    console.error("OpenAI API Error:", error);
-    res.status(500).json({ error: "Failed to generate content" });
+    console.error('OpenAI API Error:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Failed to generate content' });
   }
 }
