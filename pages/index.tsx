@@ -1,5 +1,5 @@
-
 import { useState } from 'react';
+import jsPDF from 'jspdf'; // install if needed: npm install jspdf
 
 export default function Home() {
   const [contentType, setContentType] = useState('');
@@ -24,13 +24,16 @@ export default function Home() {
 
       if (response.ok) {
         setGeneratedResult(data.result);
-        // Save to history
-        await fetch('/api/saveToHistory', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt, result: data.result }),
-        });
-        setHistory((prev) => [data.result, ...prev]);
+
+        if (prompt && data.result) {
+          await fetch('/api/saveToHistory', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt, result: data.result }),
+          });
+
+          setHistory((prev) => [data.result, ...prev]);
+        }
       } else {
         setGeneratedResult('Something went wrong. Try again.');
       }
@@ -45,6 +48,39 @@ export default function Home() {
       navigator.clipboard.writeText(generatedResult);
       alert('Copied to clipboard!');
     }
+  };
+
+  const clearHistory = () => {
+    setHistory([]);
+  };
+
+  const clearDatabaseHistory = async () => {
+    try {
+      const response = await fetch('/api/clearHistory', {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        alert('All history cleared from database.');
+        setHistory([]);
+      } else {
+        alert('Failed to clear database history.');
+      }
+    } catch (error) {
+      console.error('Error clearing database:', error);
+      alert('Error clearing database.');
+    }
+  };
+
+  const downloadPDF = () => {
+    const doc = new jsPDF();
+    doc.text('Generated Content History:', 10, 10);
+
+    history.forEach((item, index) => {
+      doc.text(`${index + 1}. ${item}`, 10, 20 + index * 10);
+    });
+
+    doc.save('history.pdf');
   };
 
   // Sharing Functions
@@ -84,7 +120,11 @@ export default function Home() {
 
       <div style={{ marginBottom: '10px' }}>
         <label>Choose Content Type:</label>
-        <select value={contentType} onChange={(e) => setContentType(e.target.value)} style={{ width: '100%', padding: '8px' }}>
+        <select
+          value={contentType}
+          onChange={(e) => setContentType(e.target.value)}
+          style={{ width: '100%', padding: '8px' }}
+        >
           <option value="">Select a type</option>
           <option value="Instagram Caption">Instagram Caption</option>
           <option value="Product Description">Product Description</option>
@@ -111,7 +151,9 @@ export default function Home() {
         />
       </div>
 
-      <button onClick={handleGenerate} style={{ padding: '10px 20px', fontWeight: 'bold' }}>Generate</button>
+      <button onClick={handleGenerate} style={{ padding: '10px 20px', fontWeight: 'bold' }}>
+        Generate
+      </button>
 
       <div style={{ marginTop: '20px' }}>
         <h3>Generated Result:</h3>
@@ -119,10 +161,12 @@ export default function Home() {
 
         {generatedResult && (
           <>
-            <button onClick={handleCopy} style={{ marginTop: '10px' }}>Copy</button>
+            <button onClick={handleCopy} style={{ marginTop: '10px' }}>
+              Copy
+            </button>
 
             <div style={{ marginTop: '10px' }}>
-              <h4>Share:</h4>
+              <h4>Share</h4>
               <button onClick={shareOnFacebook}>Facebook</button>
               <button onClick={shareOnTwitter}>Twitter</button>
               <button onClick={shareOnWhatsApp}>WhatsApp</button>
@@ -141,7 +185,22 @@ export default function Home() {
             <li key={index}>{item}</li>
           ))}
         </ul>
+
+        {history.length > 0 && (
+          <div style={{ marginTop: '20px' }}>
+            <button onClick={clearHistory} style={{ marginRight: '10px' }}>
+              Clear Local History
+            </button>
+            <button onClick={clearDatabaseHistory} style={{ marginRight: '10px' }}>
+              Clear Database History
+            </button>
+            <button onClick={downloadPDF}>
+              Download PDF
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
