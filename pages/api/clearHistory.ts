@@ -1,4 +1,5 @@
 
+
 // pages/api/clearHistory.ts
 
 import type { NextApiRequest, NextApiResponse } from 'next';
