@@ -73,7 +73,8 @@ export default function Home() {
     window.open(url, '_blank');
   };
 
-  constconst clearDatabaseHistory = async () => {
+  const clearDatabaseHistory = async () => {
+
     try {
       const response = await fetch('/api/clearHistory', {
         method: 'POST',
