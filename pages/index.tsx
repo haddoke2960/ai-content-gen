@@ -93,7 +93,8 @@ export default function Home() {
       alert('Error clearing database.');
     }
   };
-   shareOnTwitter = () => {
+  const shareOnTwitter = () => {
+
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(generatedResult)}`;
     window.open(url, '_blank');
   };
