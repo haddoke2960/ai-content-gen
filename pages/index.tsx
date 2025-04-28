@@ -54,23 +54,7 @@ export default function Home() {
     setHistory([]);
   };
 
-  const clearDatabaseHistory = async () => {
-    try {
-      const response = await fetch('/api/clearHistory', {
-        method: 'POST',
-      });
-
-      if (response.ok) {
-        alert('All history cleared from database.');
-        setHistory([]);
-      } else {
-        alert('Failed to clear database history.');
-      }
-    } catch (error) {
-      console.error('Error clearing database:', error);
-      alert('Error clearing database.');
-    }
-  };
+  
 
   const downloadPDF = () => {
     const doc = new jsPDF();
@@ -89,7 +73,26 @@ export default function Home() {
     window.open(url, '_blank');
   };
 
-  const shareOnTwitter = () => {
+  constconst clearDatabaseHistory = async () => {
+    try {
+      const response = await fetch('/api/clearHistory', {
+        method: 'POST',
+      });
+  
+      const data = await response.json(); // <<< New line added here!
+  
+      if (response.ok) {
+        alert(data.message); // <<< show backend message correctly
+        setHistory([]);
+      } else {
+        alert('Failed to clear database history.');
+      }
+    } catch (error) {
+      console.error('Error clearing database:', error);
+      alert('Error clearing database.');
+    }
+  };
+   shareOnTwitter = () => {
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(generatedResult)}`;
     window.open(url, '_blank');
   };
