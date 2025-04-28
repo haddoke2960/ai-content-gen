@@ -23,7 +23,8 @@ export default async function handler(
       return res.status(400).json({ message: 'Missing fields' });
     }
 
-    await addDoc(collection(db, 'history'), {
+    await addDoc(collection(db, 'captions'), {
+
       prompt,
       result,
       createdAt: serverTimestamp(),
