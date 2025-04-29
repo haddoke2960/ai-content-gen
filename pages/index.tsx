@@ -7,37 +7,44 @@ export default function Home() {
   const [prompt, setPrompt] = useState('');
   const [generatedResult, setGeneratedResult] = useState('');
   const [history, setHistory] = useState<string[]>([]);
-
   const handleGenerate = async () => {
     if (!prompt || !contentType) {
-      setGeneratedResult('Error: Missing content type or prompt.');
+      setGeneratedResult('Error: Missing content type or prompt');
       return;
     }
-
+  
     try {
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contentType, prompt }),
       });
-
+  
       const data = await response.json();
-
+  
       if (response.ok) {
         setGeneratedResult(data.result);
-
+  
         if (prompt && data.result) {
-        await fetch('/api/saveToHistory', {
+          console.log('>> Triggering saveToHistory', { prompt, result: data.result });
+  
+          await fetch('/api/saveToHistory', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt, result: data.result }),
           });
-
+  
           setHistory((prev) => [data.result, ...prev]);
         }
       } else {
         setGeneratedResult('Something went wrong. Try again.');
       }
+    } catch (error) {
+      console.error('Error during generation:', error);
+      setGeneratedResult('Error generating content');
+    }
+  };
+  
     } catch (error) {
       console.error('Error:', error);
       setGeneratedResult('Something went wrong. Try again.');
