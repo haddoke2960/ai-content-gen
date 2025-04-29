@@ -40,8 +40,7 @@ export default function Home() {
     } catch (error) {
       console.error('Error:', error);
       setGeneratedResult('Something went wrong. Try again.');
-    }
-
+    
   const handleCopy = () => {
     if (generatedResult) {
       navigator.clipboard.writeText(generatedResult);
