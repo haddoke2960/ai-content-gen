@@ -1,5 +1,4 @@
 // pages/api/saveToHistory.ts
-
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
