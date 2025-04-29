@@ -76,4 +76,3 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('OpenAI API Error:', error.response?.data || error.message);
     res.status(500).json({ error: 'Failed to generate content' });
   }
-}

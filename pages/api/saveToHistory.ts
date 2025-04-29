@@ -1,3 +1,4 @@
+// pages/api/saveToHistory.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -17,16 +18,16 @@ export default async function handler(
   try {
     const { prompt, result } = req.body;
 
-    if (!prompt || !result) {
-      return res.status(400).json({ message: 'Prompt and result are required' });
-    }
+    await addDoc(collection(db, 'captions'), {
+      prompt,
+      result,
+      createdAt: new Date(),
+    });
 
-    await addDoc(collection(db, 'captions'), { prompt, result });
-
-    return res.status(200).json({ message: 'Caption saved successfully' });
+    res.status(200).json({ message: 'Saved successfully' });
   } catch (error) {
-    console.error('Error saving caption:', error);
-    return res.status(500).json({ message: 'Something went wrong' });
+    console.error('Error saving history:', error);
+    res.status(500).json({ message: 'Failed to save history' });
   }
 }
 
