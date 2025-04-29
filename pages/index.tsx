@@ -41,7 +41,6 @@ export default function Home() {
       console.error('Error:', error);
       setGeneratedResult('Something went wrong. Try again.');
     }
-  };
 
   const handleCopy = () => {
     if (generatedResult) {
