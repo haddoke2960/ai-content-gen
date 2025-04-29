@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import jsPDF from 'jspdf';
 
@@ -7,39 +6,42 @@ export default function Home() {
   const [prompt, setPrompt] = useState('');
   const [generatedResult, setGeneratedResult] = useState('');
   const [history, setHistory] = useState<string[]>([]);
+  const [language, setLanguage] = useState('en');
+
   const handleGenerate = async () => {
     if (!prompt || !contentType) {
       setGeneratedResult('Error: Missing content type or prompt');
-      try {
-  const response = await fetch('/api/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contentType, prompt }),
-  });
+      return;
+    }
 
-  const data = await response.json();
-
-  if (response.ok) {
-    setGeneratedResult(data.result);
-
-    if (prompt && data.result) {
-      console.log('>> Triggering saveToHistory', { prompt, result: data.result });
-
-      await fetch('/api/saveToHistory', {
+    try {
+      const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, result: data.result }),
+        body: JSON.stringify({ contentType, prompt }),
       });
 
-      setHistory((prev) => [data.result, ...prev]);
+      const data = await response.json();
+
+      if (response.ok) {
+        setGeneratedResult(data.result);
+
+        if (prompt && data.result) {
+          await fetch('/api/saveToHistory', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt, result: data.result }),
+          });
+
+          setHistory((prev) => [data.result, ...prev]);
+        }
+      } else {
+        setGeneratedResult('Something went wrong. Try again.');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setGeneratedResult('Something went wrong. Try again.');
     }
-  } else {
-    setGeneratedResult('Something went wrong. Try again.');
-  }
-} catch (error) {
-  console.error('Error:', error);
-  setGeneratedResult('Something went wrong. Try again.');
-}
   };
 
   const handleCopy = () => {
@@ -56,62 +58,38 @@ export default function Home() {
   const downloadPDF = () => {
     const doc = new jsPDF();
     doc.text('Generated Content History:', 10, 10);
-
     history.forEach((item, index) => {
       doc.text(`${index + 1}. ${item}`, 10, 20 + index * 10);
     });
-
     doc.save('history.pdf');
   };
 
-  const clearDatabaseHistory = async () => {
+  const share = (platform: string) => {
+    const encoded = encodeURIComponent(generatedResult);
+    const urls: any = {
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encoded}`,
+      twitter: `https://twitter.com/intent/tweet?text=${encoded}`,
+      whatsapp: `https://api.whatsapp.com/send?text=${encoded}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encoded}`,
+      reddit: `https://reddit.com/submit?title=${encoded}`,
+      pinterest: `https://pinterest.com/pin/create/button/?description=${encoded}`,
+    };
+    window.open(urls[platform], '_blank');
+  };
+
+  const handleTranslate = async () => {
+    if (!generatedResult || language === 'en') return;
     try {
-      const response = await fetch('/api/clearHistory', {
+      const response = await fetch('/api/translate', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: generatedResult, targetLang: language }),
       });
-
       const data = await response.json();
-
-      if (response.ok) {
-        alert(data.message);
-        setHistory([]);
-      } else {
-        alert('Failed to clear database history.');
-      }
-    } catch (error) {
-      console.error('Error clearing database:', error);
-      alert('Error clearing database.');
+      if (response.ok) setGeneratedResult(data.translatedText);
+    } catch (err) {
+      alert('Translation failed.');
     }
-  };
-
-  const shareOnFacebook = () => {
-    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(generatedResult)}`;
-    window.open(url, '_blank');
-  };
-
-  const shareOnTwitter = () => {
-    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(generatedResult)}`;
-    window.open(url, '_blank');
-  };
-
-  const shareOnWhatsApp = () => {
-    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(generatedResult)}`;
-    window.open(url, '_blank');
-  };
-
-  const shareOnLinkedIn = () => {
-    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(generatedResult)}`;
-    window.open(url, '_blank');
-  };
-
-  const shareOnReddit = () => {
-    const url = `https://reddit.com/submit?title=${encodeURIComponent(generatedResult)}`;
-    window.open(url, '_blank');
-  };
-
-  const shareOnPinterest = () => {
-    const url = `https://pinterest.com/pin/create/button/?description=${encodeURIComponent(generatedResult)}`;
-    window.open(url, '_blank');
   };
 
   return (
@@ -161,12 +139,30 @@ export default function Home() {
 
             <div style={{ marginTop: '10px' }}>
               <h4>Share</h4>
-              <button onClick={shareOnFacebook}>Facebook</button>
-              <button onClick={shareOnTwitter}>Twitter</button>
-              <button onClick={shareOnWhatsApp}>WhatsApp</button>
-              <button onClick={shareOnLinkedIn}>LinkedIn</button>
-              <button onClick={shareOnReddit}>Reddit</button>
-              <button onClick={shareOnPinterest}>Pinterest</button>
+              <button onClick={() => share('facebook')}>Facebook</button>
+              <button onClick={() => share('twitter')}>Twitter</button>
+              <button onClick={() => share('whatsapp')}>WhatsApp</button>
+              <button onClick={() => share('linkedin')}>LinkedIn</button>
+              <button onClick={() => share('reddit')}>Reddit</button>
+              <button onClick={() => share('pinterest')}>Pinterest</button>
+            </div>
+
+            <div style={{ marginTop: '10px' }}>
+              <label>Translate to:</label>
+              <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+                <option value="en">English (default)</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="de">German</option>
+                <option value="ar">Arabic</option>
+                <option value="hi">Hindi</option>
+                <option value="ur">Urdu</option>
+                <option value="pa">Punjabi</option>
+                <option value="ru">Russian</option>
+                <option value="fa">Persian (Farsi)</option>
+                <option value="tg">Tajik (Tajiki)</option>
+              </select>
+              <button onClick={handleTranslate}>Translate</button>
             </div>
           </>
         )}
