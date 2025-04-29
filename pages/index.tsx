@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import jsPDF from 'jspdf'; // install if needed: npm install jspdf
+import jsPDF from 'jspdf';
 
 export default function Home() {
   const [contentType, setContentType] = useState('');
@@ -40,7 +40,9 @@ export default function Home() {
     } catch (error) {
       console.error('Error:', error);
       setGeneratedResult('Something went wrong. Try again.');
-    
+    }
+  };
+
   const handleCopy = () => {
     if (generatedResult) {
       navigator.clipboard.writeText(generatedResult);
@@ -51,8 +53,6 @@ export default function Home() {
   const clearHistory = () => {
     setHistory([]);
   };
-
-  
 
   const downloadPDF = () => {
     const doc = new jsPDF();
@@ -65,23 +65,16 @@ export default function Home() {
     doc.save('history.pdf');
   };
 
-  // Sharing Functions
-  const shareOnFacebook = () => {
-    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(generatedResult)}`;
-    window.open(url, '_blank');
-  };
-
   const clearDatabaseHistory = async () => {
-
     try {
       const response = await fetch('/api/clearHistory', {
         method: 'POST',
       });
-  
-      const data = await response.json(); // <<< New line added here!
-  
+
+      const data = await response.json();
+
       if (response.ok) {
-        alert(data.message); // <<< show backend message correctly
+        alert(data.message);
         setHistory([]);
       } else {
         alert('Failed to clear database history.');
@@ -91,8 +84,13 @@ export default function Home() {
       alert('Error clearing database.');
     }
   };
-  const shareOnTwitter = () => {
 
+  const shareOnFacebook = () => {
+    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(generatedResult)}`;
+    window.open(url, '_blank');
+  };
+
+  const shareOnTwitter = () => {
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(generatedResult)}`;
     window.open(url, '_blank');
   };
@@ -123,11 +121,7 @@ export default function Home() {
 
       <div style={{ marginBottom: '10px' }}>
         <label>Choose Content Type:</label>
-        <select
-          value={contentType}
-          onChange={(e) => setContentType(e.target.value)}
-          style={{ width: '100%', padding: '8px' }}
-        >
+        <select value={contentType} onChange={(e) => setContentType(e.target.value)}>
           <option value="">Select a type</option>
           <option value="Instagram Caption">Instagram Caption</option>
           <option value="Product Description">Product Description</option>
@@ -164,9 +158,7 @@ export default function Home() {
 
         {generatedResult && (
           <>
-            <button onClick={handleCopy} style={{ marginTop: '10px' }}>
-              Copy
-            </button>
+            <button onClick={handleCopy} style={{ marginTop: '10px' }}>Copy</button>
 
             <div style={{ marginTop: '10px' }}>
               <h4>Share</h4>
@@ -197,13 +189,10 @@ export default function Home() {
             <button onClick={clearDatabaseHistory} style={{ marginRight: '10px' }}>
               Clear Database History
             </button>
-            <button onClick={downloadPDF}>
-              Download PDF
-            </button>
+            <button onClick={downloadPDF}>Download PDF</button>
           </div>
         )}
       </div>
     </div>
   );
 }
-
