@@ -186,9 +186,6 @@ export default function Home() {
             <button onClick={clearHistory} style={{ marginRight: '10px' }}>
               Clear Local History
             </button>
-            <button onClick={clearDatabaseHistory} style={{ marginRight: '10px' }}>
-              Clear Database History
-            </button>
             <button onClick={downloadPDF}>Download PDF</button>
           </div>
         )}
