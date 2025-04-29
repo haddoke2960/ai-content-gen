@@ -1,6 +1,5 @@
-// pages/api/saveToHistory.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 
 type Data = {
@@ -19,19 +18,14 @@ export default async function handler(
     const { prompt, result } = req.body;
 
     if (!prompt || !result) {
-      return res.status(400).json({ message: 'Missing fields' });
+      return res.status(400).json({ message: 'Prompt and result are required' });
     }
 
-    await addDoc(collection(db, 'captions'), {
+    await addDoc(collection(db, 'captions'), { prompt, result });
 
-      prompt,
-      result,
-      createdAt: serverTimestamp(),
-    });
-
-    return res.status(200).json({ message: 'Saved successfully' });
+    return res.status(200).json({ message: 'Caption saved successfully' });
   } catch (error) {
-    console.error('Error saving to history:', error);
+    console.error('Error saving caption:', error);
     return res.status(500).json({ message: 'Something went wrong' });
   }
 }
