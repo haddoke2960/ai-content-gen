@@ -1,4 +1,3 @@
-// pages/api/saveToHistory.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -30,4 +29,5 @@ export default async function handler(
     res.status(500).json({ message: 'Failed to save history' });
   }
 }
+
 
