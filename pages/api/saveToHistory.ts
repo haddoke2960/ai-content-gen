@@ -10,6 +10,8 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data>
 ) {
+  console.log(">> saveToHistory called with", req.method);
+
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
@@ -29,5 +31,3 @@ export default async function handler(
     res.status(500).json({ message: 'Failed to save history' });
   }
 }
-
-
