@@ -1,38 +1,46 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+// pages/api/translate.ts
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { OpenAI } from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+type Data = {
+  message?: string;
+  translated?: string;
+};
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<Data>
+) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method Not Allowed' });
+    return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const { text, targetLang } = req.body;
+  const { text, language } = req.body;
 
-  if (!text || !targetLang) {
-    return res.status(400).json({ message: 'Missing text or target language' });
+  if (!text || !language) {
+    return res.status(400).json({ message: 'Missing text or language' });
   }
 
   try {
-    const response = await fetch('https://libretranslate.com/translate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        q: text,
-        source: 'en',
-        target: targetLang,
-        format: 'text',
-      }),
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'user',
+          content: `Translate the following into ${language}: ${text}`,
+        },
+      ],
     });
 
-    const data = await response.json();
-
-    if (!data.translatedText) {
-      return res.status(500).json({ message: 'Translation failed' });
-    }
-
-    res.status(200).json({ translatedText: data.translatedText });
+    const translated = completion.choices[0].message?.content?.trim();
+    res.status(200).json({ translated });
   } catch (error) {
-    res.status(500).json({ message: 'Translation error', error });
+    console.error('Translate API error:', error);
+    res.status(500).json({ message: 'Translation failed' });
   }
 }
