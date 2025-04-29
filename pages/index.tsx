@@ -27,7 +27,7 @@ export default function Home() {
         setGeneratedResult(data.result);
 
         if (prompt && data.result) {
-          await fetch('/api/saveToHistory', {
+          await fetch('/api/save-to-history', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt, result: data.result }),
