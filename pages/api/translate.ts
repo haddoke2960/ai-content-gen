@@ -7,21 +7,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const { text, targetLang } = req.body;
 
-  // Mocked translations for demonstration
-  const fakeTranslations: Record<string, string> = {
-    es: 'Texto traducido al español',
-    fr: 'Texte traduit en français',
-    de: 'Ins Deutsche übersetzter Text',
-    ar: 'النص المترجم إلى العربية',
-    hi: 'हिंदी में अनुवादित पाठ',
-    ur: 'اردو میں ترجمہ شدہ متن',
-    pa: 'ਪੰਜਾਬੀ ਵਿੱਚ ਅਨੁਵਾਦਿਤ ਪਾਠ',
-    ru: 'Переведённый текст на русский',
-    fa: 'متن ترجمه شده به فارسی',
-    tg: 'Матни тарҷумашуда ба тоҷикӣ',
-  };
+  if (!text || !targetLang) {
+    return res.status(400).json({ message: 'Missing text or target language' });
+  }
 
-  const translatedText = fakeTranslations[targetLang] || `Translated (${targetLang}): ${text}`;
+  try {
+    const response = await fetch('https://libretranslate.com/translate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        q: text,
+        source: 'en',
+        target: targetLang,
+        format: 'text',
+      }),
+    });
 
-  return res.status(200).json({ translatedText });
+    const data = await response.json();
+
+    if (!data.translatedText) {
+      return res.status(500).json({ message: 'Translation failed' });
+    }
+
+    res.status(200).json({ translatedText: data.translatedText });
+  } catch (error) {
+    res.status(500).json({ message: 'Translation error', error });
+  }
 }
