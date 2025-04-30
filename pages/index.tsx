@@ -2,32 +2,17 @@ import { useState } from 'react';
 import jsPDF from 'jspdf';
 
 export default function Home() {
+  // State variables
   const [contentType, setContentType] = useState('');
   const [prompt, setPrompt] = useState('');
   const [generatedResult, setGeneratedResult] = useState('');
   const [history, setHistory] = useState<string[]>([]);
-  const [language, setLanguage] = useState('en');
-  const [translated, setTranslated] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [language, setLanguage] = useState('en'); // default language for translation (English)
+  const [loading, setLoading] = useState(false);  // loading state for translation
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
 
-  const handleTranslate = async () => {
-    if (!generatedResult || language === 'en') return;
-    setLoading(true);
-    try {
-      const res = await fetch('/api/translate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: generatedResult, targetLanguage: language }),
-      });
-      const data = await res.json();
-      setGeneratedResult(data.translatedText);
-    } catch (err) {
-      alert('Translation failed.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Handle AI content generation
   const handleGenerate = async () => {
     if (!prompt || !contentType) {
       setGeneratedResult('Error: Missing content type or prompt');
@@ -40,15 +25,18 @@ export default function Home() {
         body: JSON.stringify({ contentType, prompt }),
       });
       const data = await response.json();
-      if (response.ok) {
+      if (response.ok && data.result) {
         setGeneratedResult(data.result);
+        // Save to history (local state and optional backend)
         if (prompt && data.result) {
+          // Optionally save to backend history
           await fetch('/api/saveToHistory', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt, result: data.result }),
           });
-          setHistory((prev) => [data.result, ...prev]);
+          // Update local history state (newest first)
+          setHistory(prev => [data.result, ...prev]);
         }
       } else {
         setGeneratedResult('Something went wrong. Try again.');
@@ -59,6 +47,32 @@ export default function Home() {
     }
   };
 
+  // Handle text translation of the generated result
+  const handleTranslate = async () => {
+    if (!generatedResult || language === 'en') return;
+    setLoading(true);
+    try {
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: generatedResult, targetLang: language }),
+      });
+      const data = await res.json();
+      if (res.ok && data.translatedText) {
+        // Replace the generated result with its translated version
+        setGeneratedResult(data.translatedText);
+      } else {
+        alert('Translation failed.');
+      }
+    } catch (err) {
+      console.error('Translation error:', err);
+      alert('Translation failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Copy the generated result to clipboard
   const handleCopy = () => {
     if (generatedResult) {
       navigator.clipboard.writeText(generatedResult);
@@ -66,8 +80,12 @@ export default function Home() {
     }
   };
 
-  const clearHistory = () => setHistory([]);
+  // Clear the local history
+  const clearHistory = () => {
+    setHistory([]);
+  };
 
+  // Download the history as a PDF file
   const downloadPDF = () => {
     const doc = new jsPDF();
     doc.text('Generated Content History:', 10, 10);
@@ -77,9 +95,11 @@ export default function Home() {
     doc.save('history.pdf');
   };
 
+  // Share the generated result on a chosen platform
   const share = (platform: string) => {
+    if (!generatedResult) return;
     const encoded = encodeURIComponent(generatedResult);
-    const urls: any = {
+    const urls: { [key: string]: string } = {
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encoded}`,
       twitter: `https://twitter.com/intent/tweet?text=${encoded}`,
       whatsapp: `https://api.whatsapp.com/send?text=${encoded}`,
@@ -87,16 +107,34 @@ export default function Home() {
       reddit: `https://reddit.com/submit?title=${encoded}`,
       pinterest: `https://pinterest.com/pin/create/button/?description=${encoded}`,
     };
-    window.open(urls[platform], '_blank');
+    const url = urls[platform];
+    if (url) {
+      window.open(url, '_blank');
+    }
+  };
+
+  // Handle lead capture form submission (fake handler)
+  const handleLeadSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // In a real app, you would send name and email to a server or API
+    alert(`Thank you, ${name}! You are subscribed (demo only).`);
+    // Clear the form fields
+    setName('');
+    setEmail('');
   };
 
   return (
     <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
       <h1>AI Content Generator</h1>
 
+      {/* Content Type Selection */}
       <div style={{ marginBottom: '10px' }}>
-        <label>Choose Content Type:</label>
-        <select value={contentType} onChange={(e) => setContentType(e.target.value)}>
+        <label style={{ marginRight: '10px' }}>Choose Content Type:</label>
+        <select 
+          value={contentType} 
+          onChange={(e) => setContentType(e.target.value)} 
+          style={{ minWidth: '200px' }}
+        >
           <option value="">Select a type</option>
           <option value="Instagram Caption">Instagram Caption</option>
           <option value="Product Description">Product Description</option>
@@ -112,48 +150,58 @@ export default function Home() {
         </select>
       </div>
 
+      {/* Prompt Input */}
       <div style={{ marginBottom: '10px' }}>
-        <label>Describe your topic:</label>
-        <input
-          type="text"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder="e.g. tips for selling handmade soap"
-          style={{ width: '100%', padding: '8px' }}
+        <label style={{ display: 'block', marginBottom: '5px' }}>Enter Prompt:</label>
+        <textarea 
+          value={prompt} 
+          onChange={(e) => setPrompt(e.target.value)} 
+          rows={3} 
+          style={{ width: '100%', padding: '5px' }} 
+          placeholder="Type your prompt here..."
         />
       </div>
-
-      <button onClick={handleGenerate} style={{ padding: '10px 20px', fontWeight: 'bold' }}>
+      <button onClick={handleGenerate} style={{ marginBottom: '20px' }}>
         Generate
       </button>
 
-      <div style={{ marginTop: '20px' }}>
-        <h3>Generated Result:</h3>
-        <p>{generatedResult || 'Nothing yet'}</p>
+      {/* Generated Result Display and Actions */}
+      {generatedResult && (
+        <div style={{ marginBottom: '20px' }}>
+          <div 
+            style={{ whiteSpace: 'pre-wrap', border: '1px solid #ccc', padding: '10px' }}
+          >
+            {generatedResult}
+          </div>
+          <div style={{ marginTop: '5px' }}>
+            <button onClick={handleCopy} style={{ marginRight: '10px' }}>
+              Copy to Clipboard
+            </button>
+            {/* Social Sharing Buttons */}
+            <button onClick={() => share('facebook')} style={{ marginRight: '5px' }}>Facebook</button>
+            <button onClick={() => share('twitter')} style={{ marginRight: '5px' }}>Twitter</button>
+            <button onClick={() => share('whatsapp')} style={{ marginRight: '5px' }}>WhatsApp</button>
+            <button onClick={() => share('linkedin')} style={{ marginRight: '5px' }}>LinkedIn</button>
+            <button onClick={() => share('reddit')} style={{ marginRight: '5px' }}>Reddit</button>
+            <button onClick={() => share('pinterest')}>Pinterest</button>
+          </div>
+        </div>
+      )}
 
-        {generatedResult && (
-          <>
-            <button onClick={handleCopy} style={{ marginTop: '10px' }}>Copy</button>
-            <div style={{ marginTop: '10px' }}>
-              <h4>Share</h4>
-              <button onClick={() => share('facebook')}>Facebook</button>
-              <button onClick={() => share('twitter')}>Twitter</button>
-              <button onClick={() => share('whatsapp')}>WhatsApp</button>
-              <button onClick={() => share('linkedin')}>LinkedIn</button>
-              <button onClick={() => share('reddit')}>Reddit</button>
-              <button onClick={() => share('pinterest')}>Pinterest</button>
-            </div>
-          </>
-        )}
-      </div>
-
-      <div style={{ marginTop: '10px' }}>
-        <label>Translate to:</label>
-        <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+      {/* Translation Section */}
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{ marginRight: '10px' }}>Translate to:</label>
+        <select 
+          value={language} 
+          onChange={(e) => setLanguage(e.target.value)} 
+          style={{ marginRight: '10px' }}
+        >
           <option value="en">English (default)</option>
           <option value="es">Spanish</option>
           <option value="fr">French</option>
           <option value="de">German</option>
+          <option value="zh">Chinese</option>
+          <option value="ja">Japanese</option>
           <option value="ar">Arabic</option>
           <option value="hi">Hindi</option>
           <option value="ur">Urdu</option>
@@ -162,24 +210,72 @@ export default function Home() {
           <option value="fa">Persian (Farsi)</option>
           <option value="tg">Tajik (Tajiki)</option>
         </select>
-        <button onClick={handleTranslate}>Translate</button>
+        <button onClick={handleTranslate} disabled={loading || !generatedResult || language === 'en'}>
+          {loading ? 'Translating...' : 'Translate'}
+        </button>
       </div>
 
-      <div style={{ marginTop: '40px' }}>
-        <h3>Previous Captions:</h3>
-        <ul>
-          {history.map((item, index) => (
-            <li key={index}>{item}</li>
-          ))}
-        </ul>
+      {/* Google AdSense Placeholder */}
+      <div style={{ textAlign: 'center', margin: '20px 0' }}>
+        {/* Google AdSense Ad Placeholder (for later integration) */}
+        <ins className="adsbygoogle"
+             style={{ display: 'block', width: '100%', height: '250px' }}
+             data-ad-client="ca-pub-xxxxxxxxxxxxxxxx"
+             data-ad-slot="xxxxxxxxxx"
+             data-ad-format="auto"
+             data-full-width-responsive="true">
+        </ins>
+      </div>
 
-        {history.length > 0 && (
-          <div style={{ marginTop: '20px' }}>
-            <button onClick={clearHistory} style={{ marginRight: '10px' }}>Clear Local History</button>
-            <button onClick={downloadPDF}>Download PDF</button>
+      {/* Lead Capture Form */}
+      <div style={{ margin: '20px 0', padding: '15px', border: '1px solid #ccc' }}>
+        <h2>Join Our Mailing List</h2>
+        <form onSubmit={handleLeadSubmit}>
+          <div style={{ marginBottom: '10px' }}>
+            <input 
+              type="text" 
+              placeholder="Name" 
+              value={name} 
+              onChange={(e) => setName(e.target.value)} 
+              required 
+              style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+            />
+            <input 
+              type="email" 
+              placeholder="Email" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              required 
+              style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+            />
+            <button type="submit" style={{ padding: '8px 16px' }}>
+              Subscribe
+            </button>
           </div>
-        )}
+        </form>
       </div>
+
+      {/* History Section */}
+      {history.length > 0 && (
+        <div style={{ marginTop: '40px' }}>
+          <h3>Previous Results:</h3>
+          <ul>
+            {history.map((item, index) => (
+              <li key={index} style={{ whiteSpace: 'pre-wrap' }}>
+                {item}
+              </li>
+            ))}
+          </ul>
+          <div style={{ marginTop: '10px' }}>
+            <button onClick={clearHistory} style={{ marginRight: '10px' }}>
+              Clear Local History
+            </button>
+            <button onClick={downloadPDF}>
+              Download PDF
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
