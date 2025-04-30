@@ -58,10 +58,11 @@ export default function Home() {
         body: JSON.stringify({ text: generatedResult, targetLang: language }),
       });
       const data = await res.json();
-      if (res.ok && data.translatedText) {
-        // Replace the generated result with its translated version
-        setGeneratedResult(data.translatedText);
-      } else {
+      if (res.ok && data.translated) {
+        // Replace the generated result with its translation
+        setGeneratedResult(data.translated);
+      }
+      
         alert('Translation failed.');
       }
     } catch (err) {
