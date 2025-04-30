@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import type { NextPage } from 'next';
 import { jsPDF } from 'jspdf';
