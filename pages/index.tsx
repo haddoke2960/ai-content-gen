@@ -217,9 +217,12 @@ export default function Home() {
   <button onClick={handleTranslate} disabled={loading}>
     {loading ? 'Translating...' : 'Translate to Urdu'}
   </button>
+
   {translated && (
     <p style={{ marginTop: '1rem' }}>
       <strong>Translated:</strong> {translated}
     </p>
-  )}
+  )}  {/* ← Inserted the missing parenthesis here */}
+  
 </div>
+  
