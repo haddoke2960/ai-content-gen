@@ -9,54 +9,45 @@ export default function Home() {
   const [language, setLanguage] = useState('en');
   const [translated, setTranslated] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const handleTranslate = async () => {
+    if (!generatedResult || language === 'en') return;
     setLoading(true);
     try {
       const res = await fetch('/api/translate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          text: 'Hello, how are you?',
-          targetLanguage: 'Urdu',
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: generatedResult, targetLanguage: language }),
       });
-  
       const data = await res.json();
-      setTranslated(data.translated || 'No result');
-    } catch (error) {
-      setTranslated('Error occurred');
-      console.error(error);
+      setGeneratedResult(data.translatedText);
+    } catch (err) {
+      alert('Translation failed.');
     } finally {
       setLoading(false);
-   
+    }
+  };
+
   const handleGenerate = async () => {
     if (!prompt || !contentType) {
       setGeneratedResult('Error: Missing content type or prompt');
       return;
     }
-
     try {
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contentType, prompt }),
       });
-
       const data = await response.json();
-
       if (response.ok) {
         setGeneratedResult(data.result);
-
         if (prompt && data.result) {
           await fetch('/api/saveToHistory', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt, result: data.result }),
           });
-
           setHistory((prev) => [data.result, ...prev]);
         }
       } else {
@@ -75,9 +66,7 @@ export default function Home() {
     }
   };
 
-  const clearHistory = () => {
-    setHistory([]);
-  };
+  const clearHistory = () => setHistory([]);
 
   const downloadPDF = () => {
     const doc = new jsPDF();
@@ -99,21 +88,6 @@ export default function Home() {
       pinterest: `https://pinterest.com/pin/create/button/?description=${encoded}`,
     };
     window.open(urls[platform], '_blank');
-  };
-
-  const handleTranslate = async () => {
-    if (!generatedResult || language === 'en') return;
-    try {
-      const response = await fetch('/api/translate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: generatedResult, targetLang: language }),
-      });
-      const data = await response.json();
-      if (response.ok) setGeneratedResult(data.translatedText);
-    } catch (err) {
-      alert('Translation failed.');
-    }
   };
 
   return (
@@ -160,7 +134,6 @@ export default function Home() {
         {generatedResult && (
           <>
             <button onClick={handleCopy} style={{ marginTop: '10px' }}>Copy</button>
-
             <div style={{ marginTop: '10px' }}>
               <h4>Share</h4>
               <button onClick={() => share('facebook')}>Facebook</button>
@@ -170,26 +143,26 @@ export default function Home() {
               <button onClick={() => share('reddit')}>Reddit</button>
               <button onClick={() => share('pinterest')}>Pinterest</button>
             </div>
-
-            <div style={{ marginTop: '10px' }}>
-              <label>Translate to:</label>
-              <select value={language} onChange={(e) => setLanguage(e.target.value)}>
-                <option value="en">English (default)</option>
-                <option value="es">Spanish</option>
-                <option value="fr">French</option>
-                <option value="de">German</option>
-                <option value="ar">Arabic</option>
-                <option value="hi">Hindi</option>
-                <option value="ur">Urdu</option>
-                <option value="pa">Punjabi</option>
-                <option value="ru">Russian</option>
-                <option value="fa">Persian (Farsi)</option>
-                <option value="tg">Tajik (Tajiki)</option>
-              </select>
-              <button onClick={handleTranslate}>Translate</button>
-            </div>
           </>
         )}
+      </div>
+
+      <div style={{ marginTop: '10px' }}>
+        <label>Translate to:</label>
+        <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+          <option value="en">English (default)</option>
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+          <option value="ar">Arabic</option>
+          <option value="hi">Hindi</option>
+          <option value="ur">Urdu</option>
+          <option value="pa">Punjabi</option>
+          <option value="ru">Russian</option>
+          <option value="fa">Persian (Farsi)</option>
+          <option value="tg">Tajik (Tajiki)</option>
+        </select>
+        <button onClick={handleTranslate}>Translate</button>
       </div>
 
       <div style={{ marginTop: '40px' }}>
@@ -202,9 +175,7 @@ export default function Home() {
 
         {history.length > 0 && (
           <div style={{ marginTop: '20px' }}>
-            <button onClick={clearHistory} style={{ marginRight: '10px' }}>
-              Clear Local History
-            </button>
+            <button onClick={clearHistory} style={{ marginRight: '10px' }}>Clear Local History</button>
             <button onClick={downloadPDF}>Download PDF</button>
           </div>
         )}
@@ -212,17 +183,3 @@ export default function Home() {
     </div>
   );
 }
-<div style={{ marginTop: '2rem' }}>
-  <h2>Translate Demo</h2>
-  <button onClick={handleTranslate} disabled={loading}>
-    {loading ? 'Translating...' : 'Translate to Urdu'}
-  </button>
-
-  {translated && (
-    <p style={{ marginTop: '1rem' }}>
-      <strong>Translated:</strong> {translated}
-    </p>
-  )}  {/* ← Inserted the missing parenthesis here */}
-  
-</div>
-  
