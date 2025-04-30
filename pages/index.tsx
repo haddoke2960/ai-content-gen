@@ -31,9 +31,7 @@ export default function Home() {
       console.error(error);
     } finally {
       setLoading(false);
-    }
-  };
-  
+   
   const handleGenerate = async () => {
     if (!prompt || !contentType) {
       setGeneratedResult('Error: Missing content type or prompt');
