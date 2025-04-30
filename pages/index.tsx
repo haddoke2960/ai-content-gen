@@ -90,7 +90,8 @@ export default function Home() {
       const jspdf = await import('jspdf');
       const doc = new jspdf.jsPDF();
       // Add text with word-wrapping within max width 180.
-      doc.text(10, 10, text, { maxWidth: 180 });
+      doc.text(text, 10, 10, { maxWidth: 180 });
+
       doc.save('result.pdf');
     } catch (err) {
       console.error('Failed to generate PDF:', err);
