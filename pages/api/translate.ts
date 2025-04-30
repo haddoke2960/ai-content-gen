@@ -6,17 +6,21 @@ const openai = new OpenAI({
 });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Allow only POST
   if (req.method !== 'POST') {
+    res.setHeader('Allow', ['POST']);
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
   const { text, targetLanguage } = req.body;
 
+  // Validate request body
   if (!text || !targetLanguage) {
     return res.status(400).json({ message: 'Missing text or targetLanguage' });
   }
 
   try {
+    // Call OpenAI API for translation
     const response = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
@@ -28,8 +32,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     const translated = response.choices[0].message.content;
-    res.status(200).json({ translated });
+    return res.status(200).json({ translated });
   } catch (error: any) {
-    res.status(500).json({ message: 'Translation failed', error: error.message });
+    console.error('Error during translation:', error);
+    return res.status(500).json({ message: 'Translation failed', error: error.message });
   }
 }
