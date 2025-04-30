@@ -7,7 +7,33 @@ export default function Home() {
   const [generatedResult, setGeneratedResult] = useState('');
   const [history, setHistory] = useState<string[]>([]);
   const [language, setLanguage] = useState('en');
-
+  const [translated, setTranslated] = useState('');
+  const [loading, setLoading] = useState(false);
+  
+  const handleTranslate = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: 'Hello, how are you?',
+          targetLanguage: 'Urdu',
+        }),
+      });
+  
+      const data = await res.json();
+      setTranslated(data.translated || 'No result');
+    } catch (error) {
+      setTranslated('Error occurred');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   const handleGenerate = async () => {
     if (!prompt || !contentType) {
       setGeneratedResult('Error: Missing content type or prompt');
@@ -188,3 +214,14 @@ export default function Home() {
     </div>
   );
 }
+<div style={{ marginTop: '2rem' }}>
+  <h2>Translate Demo</h2>
+  <button onClick={handleTranslate} disabled={loading}>
+    {loading ? 'Translating...' : 'Translate to Urdu'}
+  </button>
+  {translated && (
+    <p style={{ marginTop: '1rem' }}>
+      <strong>Translated:</strong> {translated}
+    </p>
+  )}
+</div>
