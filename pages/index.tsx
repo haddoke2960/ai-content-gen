@@ -1,7 +1,4 @@
-// index.tsx
-// Final working AI Content Generator with YouTube, sharing, PDF, history, and modern layout
-// Copy-paste ready — includes everything Zafar asked for
-
+// index.tsx (with viral hashtags for social platforms)
 import { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
 
@@ -36,8 +33,23 @@ export default function Home() {
       });
       const data = await res.json();
       if (data.result) {
-        setResult(data.result);
-        setHistory([{ prompt, contentType, result: data.result, date: new Date().toLocaleString() }, ...history]);
+        let generated = data.result;
+
+        // Auto-add viral hashtags for relevant platforms
+        const socialTypes = [
+          'Instagram Caption',
+          'Facebook Post',
+          'Tweet',
+          'YouTube Tags'
+        ];
+
+        if (socialTypes.includes(contentType)) {
+          const hashtags = '\n\n#viral #foryou #explore #trending #reels #contentcreator';
+          generated += hashtags;
+        }
+
+        setResult(generated);
+        setHistory([{ prompt, contentType, result: generated, date: new Date().toLocaleString() }, ...history]);
       }
     } catch (e) {
       alert('Generation failed.');
