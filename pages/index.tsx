@@ -197,7 +197,15 @@ export default function Home() {
             <div key={i} style={{ background: '#fafafa', padding: '1rem', marginBottom: '1rem' }}>
               <strong>{entry.contentType}</strong> | <em>{entry.date}</em>
               <p><strong>Prompt:</strong> {entry.prompt}</p>
-              <pre style={{ whiteSpace: 'pre-wrap' }}>{entry.result}</pre>
+              {entry.result.startsWith('http') ? (
+  <img
+    src={entry.result}
+    alt="Generated"
+    style={{ maxWidth: '100%', borderRadius: '8px', marginTop: '10px' }}
+  />
+) : (
+  <pre style={{ whiteSpace: 'pre-wrap' }}>{entry.result}</pre>
+)}
             </div>
           ))}
         </div>
