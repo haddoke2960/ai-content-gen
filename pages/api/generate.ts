@@ -1,10 +1,11 @@
 // pages/api/generate.ts
-// Handles text and image generation based on contentType
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -18,21 +19,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Image generation for "Generate Image" content type
     if (contentType === 'Generate Image') {
       const image = await openai.images.generate({
         prompt,
         n: 1,
-        size: '512x512' // or '1024x1024' for higher res
+        size: '512x512',
       });
 
-      const imageUrl = image.data[0]?.url;
-      if (!imageUrl) throw new Error('No image returned');
+      const imageUrl = image?.data?.[0]?.url;
+      if (!imageUrl) {
+        return res.status(500).json({ message: 'No image URL returned from OpenAI' });
+      }
 
       return res.status(200).json({ image: imageUrl });
     }
 
-    // Text generation for all other content types
+    // For all other content types, generate text
     const chat = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
