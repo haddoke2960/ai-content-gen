@@ -1,12 +1,14 @@
-// index.tsx — Final Combined: ViralTag, Keyword Generator, Amazon Optimizer, Product Comparison
+// ✅ Final index.tsx with all features: Generate Image, AI content, sharing, PDF, copy, history, subscribe
+// This is your complete working version to paste in pages/index.tsx
 
 import { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
 
 export default function Home() {
   const [prompt, setPrompt] = useState('');
-  const [contentType, setContentType] = useState('Amazon Product Optimizer');
+  const [contentType, setContentType] = useState('Generate Image');
   const [result, setResult] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const [history, setHistory] = useState<any[]>([]);
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
@@ -26,9 +28,8 @@ export default function Home() {
     if (!prompt.trim()) return;
     setLoading(true);
     setResult('');
+    setImageUrl('');
     try {
-      let finalResult = '';
-
       const apiPrompt = (text: string) => JSON.stringify({ prompt: text, contentType });
       const fetchResult = async (text: string) => {
         const res = await fetch('/api/generate', {
@@ -37,8 +38,27 @@ export default function Home() {
           body: apiPrompt(text)
         });
         const data = await res.json();
-        return data.result || 'No result returned.';
+        return data.result || data.image || 'No result returned.';
       };
+
+      let finalResult = '';
+
+      if (contentType === 'Generate Image') {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, contentType })
+        });
+        const data = await res.json();
+        if (data.image) {
+          setImageUrl(data.image);
+          setHistory([{ prompt, contentType, result: data.image, date: new Date().toLocaleString() }, ...history]);
+        } else {
+          setResult('No image returned.');
+        }
+        setLoading(false);
+        return;
+      }
 
       if (contentType === '#ViralTag') {
         finalResult = await fetchResult(`Generate 10 viral hashtags about: ${prompt}`);
@@ -47,7 +67,7 @@ export default function Home() {
       } else if (contentType === 'Amazon Product Optimizer') {
         finalResult = await fetchResult(`Create SEO Amazon title and 5 bullets for: ${prompt}`);
       } else if (contentType === 'Product Comparison') {
-        finalResult = await fetchResult(`Compare this product with top alternatives: ${prompt}. Include features and hashtags.`);
+        finalResult = await fetchResult(`Compare this product with top alternatives: ${prompt}`);
       } else {
         finalResult = await fetchResult(prompt);
         const typesWithTags = ['Instagram Caption', 'Facebook Post', 'Tweet', 'YouTube Tags', 'YouTube Video Description', 'TikTok Hook'];
@@ -118,6 +138,7 @@ export default function Home() {
         onChange={(e) => setContentType(e.target.value)}
         style={{ margin: '10px 0', padding: '8px', fontSize: '16px' }}
       >
+        <option>Generate Image</option>
         <option>#ViralTag</option>
         <option>Keyword Generator</option>
         <option>Amazon Product Optimizer</option>
@@ -139,6 +160,14 @@ export default function Home() {
       <button onClick={handleGenerate} disabled={loading} style={{ padding: '10px 20px' }}>
         {loading ? 'Generating...' : 'Generate'}
       </button>
+
+      {imageUrl && (
+        <div style={{ marginTop: '2rem' }}>
+          <h3>Generated Image:</h3>
+          <img src={imageUrl} alt="Generated AI" style={{ maxWidth: '100%', borderRadius: '8px' }} />
+          <a href={imageUrl} download style={{ display: 'block', marginTop: '10px', color: '#0070f3' }}>Download Image</a>
+        </div>
+      )}
 
       {result && (
         <div style={{ marginTop: '2rem' }}>
