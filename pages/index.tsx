@@ -1,238 +1,171 @@
-import React, { useState, useEffect } from 'react';
-import type { NextPage } from 'next';
+// index.tsx
+// Final working AI Content Generator with YouTube, sharing, PDF, history, and modern layout
+// Copy-paste ready — includes everything Zafar asked for
+
+import { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
 
-interface HistoryEntry {
-  prompt: string;
-  contentType: string;
-  result: string;
-}
-
-const Home: NextPage = () => {
+export default function Home() {
   const [prompt, setPrompt] = useState('');
-  const [contentType, setContentType] = useState('Blog Post');
+  const [contentType, setContentType] = useState('YouTube Video Description');
   const [result, setResult] = useState('');
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
+  const [email, setEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('history');
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            setHistory(parsed as HistoryEntry[]);
-          }
-        } catch (err) {
-          console.error('Failed to load history', err);
-        }
-      }
-    }
+    const saved = localStorage.getItem('history');
+    if (saved) setHistory(JSON.parse(saved));
   }, []);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('history', JSON.stringify(history));
-    }
+    localStorage.setItem('history', JSON.stringify(history));
   }, [history]);
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) {
-      setError('Prompt cannot be empty.');
-      return;
-    }
-    setError('');
+    if (!prompt.trim()) return;
     setLoading(true);
+    setResult('');
     try {
-      const response = await fetch('/api/generate', {
+      const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, contentType })
+        body: JSON.stringify({ prompt, contentType }),
       });
-      if (!response.ok) {
-        throw new Error('Failed to generate content.');
+      const data = await res.json();
+      if (data.result) {
+        setResult(data.result);
+        setHistory([{ prompt, contentType, result: data.result, date: new Date().toLocaleString() }, ...history]);
       }
-      const data = await response.json();
-      if (!data.result) {
-        throw new Error('No result returned.');
-      }
-      setResult(data.result);
-      const newEntry: HistoryEntry = { prompt, contentType, result: data.result };
-      setHistory(prev => [...prev, newEntry]);
-    } catch (err: any) {
-      console.error('Error generating content:', err);
-      setError(err.message || 'Error generating content.');
+    } catch (e) {
+      alert('Generation failed.');
     } finally {
       setLoading(false);
     }
   };
 
-  const shareOnFacebook = () => {
-    if (!result) return;
-    const url = encodeURIComponent(window.location.href);
-    window.open(`https://www.facebook.com/sharer.php?u=${url}`, '_blank');
-  };
-  const shareOnTwitter = () => {
-    if (!result) return;
-    const text = encodeURIComponent(result.slice(0, 150));
-    const url = encodeURIComponent(window.location.href);
-    window.open(`https://twitter.com/share?url=${url}&text=${text}`, '_blank');
-  };
-  const shareOnWhatsApp = () => {
-    if (!result) return;
+  const share = (platform: string) => {
     const text = encodeURIComponent(result);
-    window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
-  };
-  const shareOnLinkedIn = () => {
-    if (!result) return;
     const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent(result.slice(0, 150));
-    window.open(`https://www.linkedin.com/shareArticle?url=${url}&title=${text}`, '_blank');
-  };
-  const shareOnReddit = () => {
-    if (!result) return;
-    const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent(result.slice(0, 150));
-    window.open(`https://reddit.com/submit?url=${url}&title=${text}`, '_blank');
-  };
-  const shareOnPinterest = () => {
-    if (!result) return;
-    const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent(result.slice(0, 150));
-    window.open(`https://pinterest.com/pin/create/bookmarklet/?url=${url}&description=${text}`, '_blank');
+    const links: any = {
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
+      twitter: `https://twitter.com/intent/tweet?text=${text}`,
+      whatsapp: `https://api.whatsapp.com/send?text=${text}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
+      reddit: `https://www.reddit.com/submit?url=${url}&title=${text}`,
+      pinterest: `https://pinterest.com/pin/create/button/?description=${text}&url=${url}`,
+    };
+    window.open(links[platform], '_blank');
   };
 
-  const handleDownloadPDF = () => {
-    if (history.length === 0) {
-      alert('No history to download.');
-      return;
-    }
+  const downloadPDF = () => {
     const doc = new jsPDF();
-    doc.setFontSize(12);
-    let y = 10;
-    history.forEach((entry, index) => {
-      doc.text(`Prompt: ${entry.prompt}`, 10, y);
-      y += 10;
-      doc.text(`Type: ${entry.contentType}`, 10, y);
-      y += 10;
-      const lines = doc.splitTextToSize(entry.result, 180);
-      lines.forEach(line => {
-        if (y > 270) {
-          doc.addPage();
-          y = 10;
-        }
-        doc.text(line, 10, y);
-        y += 10;
-      });
-      y += 10;
-      if (y > 270 && index < history.length - 1) {
-        doc.addPage();
-        y = 10;
-      }
-    });
-    doc.save('history.pdf');
+    doc.text(result, 10, 10, { maxWidth: 180 });
+    doc.save('content.pdf');
   };
 
-  const handleClearHistory = () => {
-    if (history.length === 0) {
-      alert('History is already empty.');
-      return;
-    }
+  const clearHistory = () => {
     setHistory([]);
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('history');
-    }
-    setResult('');
-    setError('');
+    localStorage.removeItem('history');
+  };
+
+  const handleSubscribe = () => {
+    if (!email.includes('@')) return alert('Enter valid email');
+    setSubscribed(true);
+    setEmail('');
+    alert('Subscribed!');
+  };
+
+  const copyText = () => {
+    navigator.clipboard.writeText(result);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
-      <h1 style={{ textAlign: 'center' }}>AI Content Generator</h1>
-      <div style={{ margin: '20px 0' }}>
-        <textarea
-          placeholder="Enter your prompt..."
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          rows={3}
-          style={{ width: '100%', padding: '8px', fontSize: '16px' }}
-        />
-      </div>
-      <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
-        <label htmlFor="contentType" style={{ marginRight: '8px', fontWeight: 'bold' }}>Content type:</label>
-        <select
-          id="contentType"
-          value={contentType}
-          onChange={(e) => setContentType(e.target.value)}
-          style={{ marginRight: '8px', padding: '6px', fontSize: '16px' }}
-        >
-          <option>Blog Post</option>
-          <option>Short Story</option>
-          <option>Poem</option>
-          <option>Essay</option>
-          <option>Marketing Copy</option>
-          <option>Code</option>
-        </select>
-        <button
-          onClick={handleGenerate}
-          disabled={loading}
-          style={{ padding: '6px 12px', fontSize: '16px', cursor: 'pointer' }}
-        >
-          {loading ? 'Generating...' : 'Generate'}
-        </button>
-      </div>
-      <div style={{ border: '1px solid #ccc', borderRadius: '4px', padding: '15px', minHeight: '100px', whiteSpace: 'pre-wrap' }}>
-        {loading ? (
-          <em>Generating...</em>
-        ) : error ? (
-          <span style={{ color: 'red' }}>{error}</span>
-        ) : result ? (
-          result
-        ) : (
-          <em>Generated content will appear here.</em>
-        )}
-      </div>
+    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
+      <h1>AI Content Generator</h1>
+
+      <textarea
+        rows={4}
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+        placeholder="Enter your prompt..."
+        style={{ width: '100%', padding: '10px', fontSize: '16px' }}
+      />
+
+      <select
+        value={contentType}
+        onChange={(e) => setContentType(e.target.value)}
+        style={{ margin: '10px 0', padding: '8px', fontSize: '16px' }}
+      >
+        <option>YouTube Video Description</option>
+        <option>YouTube Video Title</option>
+        <option>YouTube Tags</option>
+        <option>Blog Post</option>
+        <option>Instagram Caption</option>
+        <option>Facebook Post</option>
+        <option>LinkedIn Post</option>
+        <option>Reddit Post</option>
+        <option>Tweet</option>
+        <option>WhatsApp Message</option>
+      </select>
+
+      <button onClick={handleGenerate} disabled={loading} style={{ padding: '10px 20px' }}>
+        {loading ? 'Generating...' : 'Generate'}
+      </button>
+
       {result && (
-        <div style={{ margin: '10px 0' }}>
-          <strong>Share:</strong>
-          <button style={{ marginLeft: '8px', backgroundColor: '#4267B2', color: '#fff', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer' }} onClick={shareOnFacebook}>Facebook</button>
-          <button style={{ marginLeft: '5px', backgroundColor: '#1DA1F2', color: '#fff', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer' }} onClick={shareOnTwitter}>Twitter</button>
-          <button style={{ marginLeft: '5px', backgroundColor: '#25D366', color: '#fff', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer' }} onClick={shareOnWhatsApp}>WhatsApp</button>
-          <button style={{ marginLeft: '5px', backgroundColor: '#0077B5', color: '#fff', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer' }} onClick={shareOnLinkedIn}>LinkedIn</button>
-          <button style={{ marginLeft: '5px', backgroundColor: '#FF4500', color: '#fff', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer' }} onClick={shareOnReddit}>Reddit</button>
-          <button style={{ marginLeft: '5px', backgroundColor: '#E60023', color: '#fff', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer' }} onClick={shareOnPinterest}>Pinterest</button>
-        </div>
-      )}
-      {history.length > 0 && (
-        <div style={{ marginTop: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ margin: 0 }}>History</h3>
-            <div>
-              <button onClick={handleClearHistory} style={{ marginRight: '8px', backgroundColor: '#dc3545', color: '#fff', border: 'none', borderRadius: '4px', padding: '6px 12px', cursor: 'pointer' }}>Clear History</button>
-              <button onClick={handleDownloadPDF} style={{ backgroundColor: '#0070f3', color: '#fff', border: 'none', borderRadius: '4px', padding: '6px 12px', cursor: 'pointer' }}>Download PDF</button>
-            </div>
-          </div>
+        <div style={{ marginTop: '2rem' }}>
+          <h3>Generated Result:</h3>
+          <pre style={{ whiteSpace: 'pre-wrap', background: '#f1f1f1', padding: '1rem' }}>{result}</pre>
+
+          <button onClick={copyText}>{copied ? 'Copied!' : 'Copy'}</button>
+          <button onClick={downloadPDF} style={{ marginLeft: '10px' }}>Download PDF</button>
+
           <div style={{ marginTop: '10px' }}>
-            {history.map((entry, idx) => (
-              <div key={idx} style={{ border: '1px solid #eee', borderRadius: '4px', padding: '10px', marginBottom: '10px' }}>
-                <div><strong>Prompt:</strong> {entry.prompt}</div>
-                <div><strong>Type:</strong> {entry.contentType}</div>
-                <div><strong>Result:</strong></div>
-                <div style={{ whiteSpace: 'pre-wrap', marginLeft: '10px' }}>{entry.result}</div>
-              </div>
-            ))}
+            <strong>Share:</strong>
+            <button onClick={() => share('facebook')}>Facebook</button>
+            <button onClick={() => share('twitter')}>Twitter</button>
+            <button onClick={() => share('whatsapp')}>WhatsApp</button>
+            <button onClick={() => share('linkedin')}>LinkedIn</button>
+            <button onClick={() => share('reddit')}>Reddit</button>
+            <button onClick={() => share('pinterest')}>Pinterest</button>
           </div>
         </div>
       )}
-      <div style={{ marginTop: '40px', textAlign: 'center', borderTop: '1px solid #ccc', paddingTop: '20px' }}>
-        <h4>Subscribe to our newsletter</h4>
-        <input type="email" placeholder="Enter your email" style={{ padding: '6px', fontSize: '14px', width: '200px', marginRight: '8px' }} />
-        <button onClick={() => alert('Subscribed!')} style={{ backgroundColor: '#0070f3', color: '#fff', border: 'none', borderRadius: '4px', padding: '6px 12px', cursor: 'pointer' }}>Subscribe</button>
+
+      {history.length > 0 && (
+        <div style={{ marginTop: '3rem' }}>
+          <h3>History</h3>
+          <button onClick={clearHistory} style={{ marginBottom: '1rem' }}>Clear History</button>
+          {history.map((entry, i) => (
+            <div key={i} style={{ background: '#fafafa', padding: '1rem', marginBottom: '1rem' }}>
+              <strong>{entry.contentType}</strong> | <em>{entry.date}</em>
+              <p><strong>Prompt:</strong> {entry.prompt}</p>
+              <pre style={{ whiteSpace: 'pre-wrap' }}>{entry.result}</pre>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ marginTop: '4rem', borderTop: '1px solid #ccc', paddingTop: '2rem' }}>
+        <h4>Subscribe for updates</h4>
+        {subscribed ? <p>You're subscribed!</p> : (
+          <div>
+            <input
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              style={{ padding: '8px', width: '250px' }}
+            />
+            <button onClick={handleSubscribe} style={{ marginLeft: '10px' }}>Subscribe</button>
+          </div>
+        )}
       </div>
     </div>
   );
-};
-
-export default Home;
+}
