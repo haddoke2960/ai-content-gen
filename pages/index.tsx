@@ -1,3 +1,4 @@
+
 // index.tsx (with viral hashtags for social platforms)
 import { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
@@ -178,6 +179,3 @@ export default function Home() {
           </div>
         )}
       </div>
-    </div>
-  );
-}
