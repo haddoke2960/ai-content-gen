@@ -1,4 +1,4 @@
-// index.tsx — final upgrade: #ViralTag now generates smart topic-based hashtags like #SweetMango #PakistaniMango
+// index.tsx — includes Product Description and TikTok Hook content types
 
 import { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
@@ -53,7 +53,8 @@ export default function Home() {
             'Facebook Post',
             'Tweet',
             'YouTube Tags',
-            'YouTube Video Description'
+            'YouTube Video Description',
+            'TikTok Hook'
           ];
           if (typesWithHashtags.includes(contentType)) {
             finalResult += '\n\n#viral #trending #foryou #reels';
@@ -125,6 +126,8 @@ export default function Home() {
         style={{ margin: '10px 0', padding: '8px', fontSize: '16px' }}
       >
         <option>#ViralTag</option>
+        <option>Product Description</option>
+        <option>TikTok Hook</option>
         <option>YouTube Video Description</option>
         <option>YouTube Video Title</option>
         <option>YouTube Tags</option>
