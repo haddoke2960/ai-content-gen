@@ -1,11 +1,11 @@
+// index.tsx — final upgrade: #ViralTag now generates smart topic-based hashtags like #SweetMango #PakistaniMango
 
-// index.tsx (with viral hashtags for social platforms)
 import { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
 
 export default function Home() {
   const [prompt, setPrompt] = useState('');
-  const [contentType, setContentType] = useState('YouTube Video Description');
+  const [contentType, setContentType] = useState('#ViralTag');
   const [result, setResult] = useState('');
   const [history, setHistory] = useState<any[]>([]);
   const [email, setEmail] = useState('');
@@ -27,31 +27,41 @@ export default function Home() {
     setLoading(true);
     setResult('');
     try {
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, contentType }),
-      });
-      const data = await res.json();
-      if (data.result) {
-        let generated = data.result;
-
-        // Auto-add viral hashtags for relevant platforms
-        const socialTypes = [
-          'Instagram Caption',
-          'Facebook Post',
-          'Tweet',
-          'YouTube Tags'
-        ];
-
-        if (socialTypes.includes(contentType)) {
-          const hashtags = '\n\n#viral #foryou #explore #trending #reels #contentcreator';
-          generated += hashtags;
+      let finalResult = '';
+      if (contentType === '#ViralTag') {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: `Generate 10 creative and viral social media hashtags based on the topic: ${prompt}`,
+            contentType: 'Hashtag List'
+          })
+        });
+        const data = await res.json();
+        finalResult = data.result || 'No hashtags returned.';
+      } else {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, contentType }),
+        });
+        const data = await res.json();
+        if (data.result) {
+          finalResult = data.result;
+          const typesWithHashtags = [
+            'Instagram Caption',
+            'Facebook Post',
+            'Tweet',
+            'YouTube Tags',
+            'YouTube Video Description'
+          ];
+          if (typesWithHashtags.includes(contentType)) {
+            finalResult += '\n\n#viral #trending #foryou #reels';
+          }
         }
-
-        setResult(generated);
-        setHistory([{ prompt, contentType, result: generated, date: new Date().toLocaleString() }, ...history]);
       }
+      setResult(finalResult);
+      setHistory([{ prompt, contentType, result: finalResult, date: new Date().toLocaleString() }, ...history]);
     } catch (e) {
       alert('Generation failed.');
     } finally {
@@ -114,6 +124,7 @@ export default function Home() {
         onChange={(e) => setContentType(e.target.value)}
         style={{ margin: '10px 0', padding: '8px', fontSize: '16px' }}
       >
+        <option>#ViralTag</option>
         <option>YouTube Video Description</option>
         <option>YouTube Video Title</option>
         <option>YouTube Tags</option>
@@ -179,3 +190,6 @@ export default function Home() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
