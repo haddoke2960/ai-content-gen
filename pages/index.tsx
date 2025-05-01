@@ -1,9 +1,11 @@
+// index.tsx — Final Combined: ViralTag, Keyword Generator, Amazon Optimizer, Product Comparison
+
 import { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
 
 export default function Home() {
   const [prompt, setPrompt] = useState('');
-  const [contentType, setContentType] = useState('Keyword Generator');
+  const [contentType, setContentType] = useState('Amazon Product Optimizer');
   const [result, setResult] = useState('');
   const [history, setHistory] = useState<any[]>([]);
   const [email, setEmail] = useState('');
@@ -26,59 +28,41 @@ export default function Home() {
     setResult('');
     try {
       let finalResult = '';
+
+      const apiPrompt = (text: string) => JSON.stringify({ prompt: text, contentType });
+      const fetchResult = async (text: string) => {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: apiPrompt(text)
+        });
+        const data = await res.json();
+        return data.result || 'No result returned.';
+      };
+
       if (contentType === '#ViralTag') {
-        const res = await fetch('/api/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: `Generate 10 creative and viral social media hashtags based on the topic: ${prompt}`,
-            contentType: 'Hashtag List'
-          })
-        });
-        const data = await res.json();
-        finalResult = data.result || 'No hashtags returned.';
+        finalResult = await fetchResult(`Generate 10 viral hashtags about: ${prompt}`);
       } else if (contentType === 'Keyword Generator') {
-        const res = await fetch('/api/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: `Give me a list of 10 high-performing SEO and Amazon search keywords related to: ${prompt}`,
-            contentType: 'Keyword List'
-          })
-        });
-        const data = await res.json();
-        finalResult = data.result || 'No keywords found.';
+        finalResult = await fetchResult(`List 10 high-volume keywords for: ${prompt}`);
+      } else if (contentType === 'Amazon Product Optimizer') {
+        finalResult = await fetchResult(`Create SEO Amazon title and 5 bullets for: ${prompt}`);
+      } else if (contentType === 'Product Comparison') {
+        finalResult = await fetchResult(`Compare this product with top alternatives: ${prompt}. Include features and hashtags.`);
       } else {
-        const res = await fetch('/api/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt, contentType }),
-        });
-        const data = await res.json();
-        if (data.result) {
-          finalResult = data.result;
-          const typesWithHashtags = [
-            'Instagram Caption',
-            'Facebook Post',
-            'Tweet',
-            'YouTube Tags',
-            'YouTube Video Description',
-            'TikTok Hook'
-          ];
-          if (typesWithHashtags.includes(contentType)) {
-            finalResult += '\n\n#viral #trending #foryou #reels';
-          }
-        }
+        finalResult = await fetchResult(prompt);
+        const typesWithTags = ['Instagram Caption', 'Facebook Post', 'Tweet', 'YouTube Tags', 'YouTube Video Description', 'TikTok Hook'];
+        if (typesWithTags.includes(contentType)) finalResult += '\n\n#viral #trending #foryou #reels';
       }
 
       setResult(finalResult);
       setHistory([{ prompt, contentType, result: finalResult, date: new Date().toLocaleString() }, ...history]);
-    } catch (e) {
-      alert('Generation failed.');
+    } catch {
+      alert('Something went wrong.');
     } finally {
       setLoading(false);
     }
   };
+
   const share = (platform: string) => {
     const text = encodeURIComponent(result);
     const url = encodeURIComponent(window.location.href);
@@ -88,7 +72,7 @@ export default function Home() {
       whatsapp: `https://api.whatsapp.com/send?text=${text}`,
       linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
       reddit: `https://www.reddit.com/submit?url=${url}&title=${text}`,
-      pinterest: `https://pinterest.com/pin/create/button/?description=${text}&url=${url}`,
+      pinterest: `https://pinterest.com/pin/create/button/?description=${text}&url=${url}`
     };
     window.open(links[platform], '_blank');
   };
@@ -105,7 +89,7 @@ export default function Home() {
   };
 
   const handleSubscribe = () => {
-    if (!email.includes('@')) return alert('Enter valid email');
+    if (!email.includes('@')) return alert('Enter a valid email');
     setSubscribed(true);
     setEmail('');
     alert('Subscribed!');
@@ -136,6 +120,8 @@ export default function Home() {
       >
         <option>#ViralTag</option>
         <option>Keyword Generator</option>
+        <option>Amazon Product Optimizer</option>
+        <option>Product Comparison</option>
         <option>Product Description</option>
         <option>TikTok Hook</option>
         <option>YouTube Video Description</option>
