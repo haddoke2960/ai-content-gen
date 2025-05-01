@@ -1,11 +1,9 @@
-// index.tsx — includes Product Description and TikTok Hook content types
-
 import { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
 
 export default function Home() {
   const [prompt, setPrompt] = useState('');
-  const [contentType, setContentType] = useState('#ViralTag');
+  const [contentType, setContentType] = useState('Keyword Generator');
   const [result, setResult] = useState('');
   const [history, setHistory] = useState<any[]>([]);
   const [email, setEmail] = useState('');
@@ -39,6 +37,17 @@ export default function Home() {
         });
         const data = await res.json();
         finalResult = data.result || 'No hashtags returned.';
+      } else if (contentType === 'Keyword Generator') {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: `Give me a list of 10 high-performing SEO and Amazon search keywords related to: ${prompt}`,
+            contentType: 'Keyword List'
+          })
+        });
+        const data = await res.json();
+        finalResult = data.result || 'No keywords found.';
       } else {
         const res = await fetch('/api/generate', {
           method: 'POST',
@@ -61,6 +70,7 @@ export default function Home() {
           }
         }
       }
+
       setResult(finalResult);
       setHistory([{ prompt, contentType, result: finalResult, date: new Date().toLocaleString() }, ...history]);
     } catch (e) {
@@ -69,7 +79,6 @@ export default function Home() {
       setLoading(false);
     }
   };
-
   const share = (platform: string) => {
     const text = encodeURIComponent(result);
     const url = encodeURIComponent(window.location.href);
@@ -126,6 +135,7 @@ export default function Home() {
         style={{ margin: '10px 0', padding: '8px', fontSize: '16px' }}
       >
         <option>#ViralTag</option>
+        <option>Keyword Generator</option>
         <option>Product Description</option>
         <option>TikTok Hook</option>
         <option>YouTube Video Description</option>
