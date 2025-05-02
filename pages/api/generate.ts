@@ -35,7 +35,7 @@ export default async function handler(
         size: '512x512',
       });
 
-      const imageUrl = imageResponse.data[0].url;
+      const imageUrl = imageResponse?.data?.[0]?.url; // Safe access to fix build error
       if (!imageUrl) {
         return res.status(500).json({ error: 'Image generation failed.' });
       }
@@ -43,14 +43,13 @@ export default async function handler(
       return res.status(200).json({ imageUrl });
     }
 
-    // Default: generate text response
     const chatResponse = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
         {
           role: 'user',
-          content: `Generate a ${contentType} for this prompt:\n${prompt}`
-        }
+          content: `Generate a ${contentType} for this prompt:\n${prompt}`,
+        },
       ],
       max_tokens: 500,
     });
