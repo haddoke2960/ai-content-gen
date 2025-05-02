@@ -77,7 +77,19 @@ export default function Home() {
         const data = await res.json();
         return data.result || data.image || 'No result returned.';
       };
-
+if (uploadedImage && contentType === 'Image Caption from Upload') {
+  const res = await fetch('/api/image-analyze', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ base64Image: uploadedImage })
+  });
+  const data = await res.json();
+  const result = data.result || 'No caption returned.';
+  setResult(result);
+  setHistory([{ prompt: 'Uploaded Image', contentType, result, date: new Date().toLocaleString() }, ...history]);
+  setLoading(false);
+  return;
+}
       if (contentType === 'Generate Image') {
         const res = await fetch('/api/generate', {
           method: 'POST',
