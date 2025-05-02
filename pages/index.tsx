@@ -25,17 +25,30 @@ export default function Home() {
     localStorage.setItem('history', JSON.stringify(history));
   }, [history]);
  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setUploadedImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+ const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX_WIDTH = 300;
+      const scale = MAX_WIDTH / img.width;
+      canvas.width = MAX_WIDTH;
+      canvas.height = img.height * scale;
+
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const base64 = canvas.toDataURL('image/jpeg', 0.6);
+      console.log('Resized image length:', base64.length);
+      setUploadedImage(base64);
+    };
+    img.src = reader.result as string;
   };
-  const handleVoice = () => {
-    const SpeechRecognition =
+  reader.readAsDataURL(file);
+};
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return alert('Voice recognition not supported.');
 
