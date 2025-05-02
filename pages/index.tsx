@@ -159,7 +159,7 @@ const handleVoice = () => {
     style={{ maxWidth: '100%', marginTop: '1rem', borderRadius: '8px' }}
   />
 )}
-return (
+
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
       <h1>AI Content Generator</h1>
 
