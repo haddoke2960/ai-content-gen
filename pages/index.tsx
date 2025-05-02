@@ -150,16 +150,16 @@ const handleVoice = () => {
   placeholder="Enter your prompt..."
   style={{ width: '100%', padding: '10px', fontSize: '16px' }}
 />
-
-<input type="file" accept="image/*" onChange={handleImageUpload} />
-{uploadedImage && (
-  <img
-    src={uploadedImage}
-    alt="Upload Preview"
-    style={{ maxWidth: '100%', marginTop: '1rem', borderRadius: '8px' }}
-  />
-)}
-
+<div style={{ marginTop: '1rem' }}>
+  <input type="file" accept="image/*" onChange={handleImageUpload} />
+  {uploadedImage && (
+    <img
+      src={uploadedImage}
+      alt="Upload Preview"
+      style={{ maxWidth: '100%', marginTop: '1rem', borderRadius: '8px' }}
+    />
+  )}
+</div>
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
       <h1>AI Content Generator</h1>
 
