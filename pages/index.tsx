@@ -1,5 +1,5 @@
-// ✅ Final index.tsx with all features: Generate Image, AI content, sharing, PDF, copy, history, subscribe
-// This is your complete working version to paste in pages/index.tsx
+// ✅ Final index.tsx with everything: voice, image upload, smart display, sharing, history, subscribe
+// Copy this entire file into your pages/index.tsx
 
 import { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
@@ -9,6 +9,7 @@ export default function Home() {
   const [contentType, setContentType] = useState('Generate Image');
   const [result, setResult] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
@@ -24,24 +25,58 @@ export default function Home() {
     localStorage.setItem('history', JSON.stringify(history));
   }, [history]);
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUploadedImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleVoice = () => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return alert('Voice recognition not supported.');
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = (event: any) => {
+      const speechResult = event.results[0][0].transcript;
+      setPrompt(prev => prev + ' ' + speechResult);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+    };
+
+    recognition.start();
+  };
+
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     setLoading(true);
     setResult('');
     setImageUrl('');
+
     try {
+      let finalResult = '';
+
       const apiPrompt = (text: string) => JSON.stringify({ prompt: text, contentType });
       const fetchResult = async (text: string) => {
         const res = await fetch('/api/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: apiPrompt(text)
+          body: apiPrompt(text),
         });
         const data = await res.json();
         return data.result || data.image || 'No result returned.';
       };
-
-      let finalResult = '';
 
       if (contentType === 'Generate Image') {
         const res = await fetch('/api/generate', {
@@ -70,8 +105,12 @@ export default function Home() {
         finalResult = await fetchResult(`Compare this product with top alternatives: ${prompt}`);
       } else {
         finalResult = await fetchResult(prompt);
-        const typesWithTags = ['Instagram Caption', 'Facebook Post', 'Tweet', 'YouTube Tags', 'YouTube Video Description', 'TikTok Hook'];
-        if (typesWithTags.includes(contentType)) finalResult += '\n\n#viral #trending #foryou #reels';
+        const typesWithTags = [
+          'Instagram Caption', 'Facebook Post', 'Tweet', 'YouTube Tags', 'YouTube Video Description', 'TikTok Hook'
+        ];
+        if (typesWithTags.includes(contentType)) {
+          finalResult += '\n\n#viral #trending #foryou #reels';
+        }
       }
 
       setResult(finalResult);
@@ -120,46 +159,8 @@ export default function Home() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-const handleVoice = () => {
-  if (typeof window !== 'undefined') {
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return alert('Voice recognition not supported in this browser.');
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'en-US';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-
-    recognition.onresult = (event: any) => {
-      const speechResult = event.results[0][0].transcript;
-      setPrompt(prev => prev + ' ' + speechResult);
-    };
-
-    recognition.onerror = (event: any) => {
-      console.error('Speech recognition error:', event.error);
-    };
-
-    recognition.start();
-  }
-};
-  <textarea
-  rows={4}
-  value={prompt}
-  onChange={(e) => setPrompt(e.target.value)}
-  placeholder="Enter your prompt..."
-  style={{ width: '100%', padding: '10px', fontSize: '16px' }}
-/>
-<div style={{ marginTop: '1rem' }}>
-  <input type="file" accept="image/*" onChange={handleImageUpload} />
-  {uploadedImage && (
-    <img
-      src={uploadedImage}
-      alt="Upload Preview"
-      style={{ maxWidth: '100%', marginTop: '1rem', borderRadius: '8px' }}
-    />
-  )}
-</div>
+  return (
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
       <h1>AI Content Generator</h1>
 
@@ -170,7 +171,16 @@ const handleVoice = () => {
         placeholder="Enter your prompt..."
         style={{ width: '100%', padding: '10px', fontSize: '16px' }}
       />
-<button onClick={handleVoice} title="Tap to Speak" style={{ marginTop: '10px' }}>🎤 Tap to Speak</button>
+
+      <button onClick={handleVoice} style={{ marginTop: '10px' }}>🎤 Tap to Speak</button>
+
+      <div style={{ marginTop: '1rem' }}>
+        <input type="file" accept="image/*" onChange={handleImageUpload} />
+        {uploadedImage && (
+          <img src={uploadedImage} alt="Upload Preview" style={{ maxWidth: '100%', marginTop: '1rem' }} />
+        )}
+      </div>
+
       <select
         value={contentType}
         onChange={(e) => setContentType(e.target.value)}
@@ -202,7 +212,7 @@ const handleVoice = () => {
       {imageUrl && (
         <div style={{ marginTop: '2rem' }}>
           <h3>Generated Image:</h3>
-          <img src={imageUrl} alt="Generated AI" style={{ maxWidth: '100%', borderRadius: '8px' }} />
+          <img src={imageUrl} alt="Generated" style={{ maxWidth: '100%', borderRadius: '8px' }} />
           <a href={imageUrl} download style={{ display: 'block', marginTop: '10px', color: '#0070f3' }}>Download Image</a>
         </div>
       )}
@@ -236,14 +246,10 @@ const handleVoice = () => {
               <strong>{entry.contentType}</strong> | <em>{entry.date}</em>
               <p><strong>Prompt:</strong> {entry.prompt}</p>
               {entry.result.startsWith('http') ? (
-  <img
-    src={entry.result}
-    alt="Generated"
-    style={{ maxWidth: '100%', borderRadius: '8px', marginTop: '10px' }}
-  />
-) : (
-  <pre style={{ whiteSpace: 'pre-wrap' }}>{entry.result}</pre>
-)}
+                <img src={entry.result} alt="Generated" style={{ maxWidth: '100%', borderRadius: '8px', marginTop: '10px' }} />
+              ) : (
+                <pre style={{ whiteSpace: 'pre-wrap' }}>{entry.result}</pre>
+              )}
             </div>
           ))}
         </div>
