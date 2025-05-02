@@ -57,7 +57,7 @@ export default function Home() {
   };
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) return;
+    if (!prompt.trim() && contentType !== 'Image Caption from Upload') return;
     setLoading(true);
     setResult('');
     setImageUrl('');
