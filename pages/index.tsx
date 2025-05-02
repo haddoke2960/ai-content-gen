@@ -143,7 +143,23 @@ const handleVoice = () => {
     recognition.start();
   }
 };
-  return (
+  <textarea
+  rows={4}
+  value={prompt}
+  onChange={(e) => setPrompt(e.target.value)}
+  placeholder="Enter your prompt..."
+  style={{ width: '100%', padding: '10px', fontSize: '16px' }}
+/>
+
+<input type="file" accept="image/*" onChange={handleImageUpload} />
+{uploadedImage && (
+  <img
+    src={uploadedImage}
+    alt="Upload Preview"
+    style={{ maxWidth: '100%', marginTop: '1rem', borderRadius: '8px' }}
+  />
+)}
+return (
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
       <h1>AI Content Generator</h1>
 
