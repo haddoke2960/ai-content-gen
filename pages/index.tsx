@@ -198,6 +198,7 @@ if (uploadedImage && contentType === 'Image Caption from Upload') {
         onChange={(e) => setContentType(e.target.value)}
         style={{ margin: '10px 0', padding: '8px', fontSize: '16px' }}
       >
+<option>Image Caption from Upload</option>
         <option>Generate Image</option>
         <option>#ViralTag</option>
         <option>Keyword Generator</option>
