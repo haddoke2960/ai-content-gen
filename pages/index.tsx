@@ -77,6 +77,8 @@ export default function Home() {
         const data = await res.json();
         return data.result || data.image || 'No result returned.';
       };
+console.log('Selected type:', contentType);
+console.log('Uploaded image present?', !!uploadedImage);
 if (uploadedImage && contentType === 'Image Caption from Upload') {
   const res = await fetch('/api/image-analyze', {
     method: 'POST',
