@@ -1,6 +1,6 @@
 // pages/api/generate.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
-import OpenAI from 'openai';
+
 
 type GenerateResult = {
   text?: string;
