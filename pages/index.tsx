@@ -132,7 +132,7 @@ export default function Home() {
         placeholder="Enter your prompt..."
         style={{ width: '100%', padding: '10px', fontSize: '16px' }}
       />
-
+<button onClick={handleVoice} title="Tap to Speak" style={{ marginTop: '10px' }}>🎤 Tap to Speak</button>
       <select
         value={contentType}
         onChange={(e) => setContentType(e.target.value)}
