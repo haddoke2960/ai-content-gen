@@ -3,7 +3,8 @@
 
 import { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
-
+declare var SpeechRecognition: any;
+declare var webkitSpeechRecognition: any;
 export default function Home() {
   const [prompt, setPrompt] = useState('');
   const [contentType, setContentType] = useState('Generate Image');
