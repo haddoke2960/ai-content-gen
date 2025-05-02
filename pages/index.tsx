@@ -50,7 +50,8 @@ export default function Home() {
   };
   reader.readAsDataURL(file);
 };
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+     const handleVoice = () => {
+ (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return alert('Voice recognition not supported.');
 
     const recognition = new SpeechRecognition();
@@ -66,7 +67,7 @@ export default function Home() {
     recognition.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error);
     };
-
+};
     recognition.start();
   };
 
