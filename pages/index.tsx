@@ -24,8 +24,7 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem('history', JSON.stringify(history));
   }, [history]);
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+ const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -35,7 +34,6 @@ export default function Home() {
       reader.readAsDataURL(file);
     }
   };
-
   const handleVoice = () => {
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
