@@ -60,46 +60,50 @@ export default function Home() {
     reader.readAsDataURL(file);
   };
 
-  const handleGenerate = async () => {
-    if (!prompt.trim() && contentType !== 'Image Caption from Upload') return;
-    setLoading(true);
-    setResult('');
-    setImageUrl('');
+ const handleGenerate = async () => {
+  if (!prompt.trim() && contentType !== 'Image Caption from Upload') return;
+  setLoading(true);
+  setResult('');
+  setImageUrl('');
 
-    try {
-      if (uploadedImage && contentType === 'Image Caption from Upload') {
-        const res = await fetch('/api/image-analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ base64Image: uploadedImage })
-        });
-        const data = await res.json();
-        setResult(data.result || 'No caption returned.');
-        setHistory([{ prompt: 'Uploaded Image', contentType, result: data.result, date: new Date().toLocaleString() }, ...history]);
-        setLoading(false);
-        return;
-      }
-
-      const res = await fetch('/api/generate', {
+  try {
+    // Image Caption from Upload
+    if (uploadedImage && contentType === 'Image Caption from Upload') {
+      const res = await fetch('/api/image-analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, contentType })
+        body: JSON.stringify({ image: uploadedImage }) // FIXED: key changed from base64Image to image
       });
+
       const data = await res.json();
-      if (data.image) {
-        setImageUrl(data.image);
-        setHistory([{ prompt, contentType, result: data.image, date: new Date().toLocaleString() }, ...history]);
-      } else {
-        setResult(data.result || 'No result returned.');
-        setHistory([{ prompt, contentType, result: data.result, date: new Date().toLocaleString() }, ...history]);
-      }
-    } catch (err) {
-      console.error('Error:', err);
-      alert('Something went wrong.');
-    } finally {
+      setResult(data.result || 'No caption returned.');
+      setHistory([{ prompt: 'Uploaded Image', contentType, result: data.result, date: new Date().toLocaleString() }, ...history]);
       setLoading(false);
+      return;
     }
-  };
+
+    // All other content types
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, contentType })
+    });
+
+    const data = await res.json();
+    if (data.image) {
+      setImageUrl(data.image);
+      setHistory([{ prompt, contentType, result: data.image, date: new Date().toLocaleString() }, ...history]);
+    } else {
+      setResult(data.result || 'No result returned.');
+      setHistory([{ prompt, contentType, result: data.result, date: new Date().toLocaleString() }, ...history]);
+    }
+  } catch (err) {
+    console.error('Error:', err);
+    alert('Something went wrong.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
