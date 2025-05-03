@@ -64,7 +64,8 @@ const IndexPage = () => {
     setImageUrl('');
 
     try {
-      let res, data;
+      let res: Response;
+      let data: { result?: string; text?: string; image?: string };
 
       if (uploadedImage && contentType.includes('Image')) {
         const base64 = uploadedImage.split(',')[1];
@@ -74,7 +75,7 @@ const IndexPage = () => {
           body: JSON.stringify({ base64 }),
         });
         data = await res.json();
-        setImageUrl(data.image);
+        setImageUrl(data.image || '');
         setHistory(prev => [...prev, { prompt, contentType, imageUrl: data.image }]);
         return;
       }
