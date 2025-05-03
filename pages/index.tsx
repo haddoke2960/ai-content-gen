@@ -1,109 +1,102 @@
-// Final index.tsx with full features — voice input, image upload/caption, PDF, sharing, dropdowns
+import React, { useState } from 'react';
+import jsPDF from 'jspdf';
 
-import { useState, useEffect } from 'react';
-import { jsPDF } from 'jspdf';
-
-export default function Home() {
+const IndexPage = () => {
   const [prompt, setPrompt] = useState('');
-  const [contentType, setContentType] = useState('#ViralTag');
+  const [contentType, setContentType] = useState('');
+  const [uploadedImage, setUploadedImage] = useState('');
+  const [voiceFile, setVoiceFile] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [result, setResult] = useState('');
   const [imageUrl, setImageUrl] = useState('');
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [history, setHistory] = useState<any[]>([]);
-  const [email, setEmail] = useState('');
-  const [subscribed, setSubscribed] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [history, setHistory] = useState([]);
 
-  useEffect(() => {
-    const saved = localStorage.getItem('history');
-    if (saved) setHistory(JSON.parse(saved));
-  }, []);
+  const handleGenerate = async () => {
+    if (!prompt.trim() && contentType !== 'Image Caption from Upload' && contentType !== 'Voice Prompt') return;
 
-  useEffect(() => {
-    localStorage.setItem('history', JSON.stringify(history));
-  }, [history]);
+    setLoading(true);
+    setResult('');
+    setImageUrl('');
 
-  const handleVoice = () => {
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return alert('Speech recognition not supported in this browser.');
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'en-US';
-    recognition.onresult = (event: any) => {
-      const speechResult = event.results[0][0].transcript;
-      setPrompt(prev => prev + ' ' + speechResult);
-    };
-    recognition.onerror = (event: any) => console.error('Speech error:', event);
-    recognition.start();
+    try {
+      if (uploadedImage && contentType === 'Image Caption from Upload') {
+        const res = await fetch('/api/image-analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ base64: uploadedImage }),
+        });
+
+        const data = await res.json();
+        setResult(data.result || 'No caption returned.');
+        setHistory(prev => [
+          ...prev,
+          { prompt: 'Uploaded Image', contentType, result: data.result || '' }
+        ]);
+        setLoading(false);
+        return;
+      }
+
+      if (voiceFile && contentType === 'Voice Prompt') {
+        const formData = new FormData();
+        formData.append('file', voiceFile);
+
+        const res = await fetch('/api/voice-to-text', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await res.json();
+        const voiceText = data.text || 'Voice transcription failed.';
+        setResult(voiceText);
+        setHistory(prev => [
+          ...prev,
+          { prompt: 'Voice Input', contentType, result: voiceText }
+        ]);
+        setLoading(false);
+        return;
+      }
+
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, contentType }),
+      });
+
+      const data = await res.json();
+
+      if (data.image) {
+        setImageUrl(data.image);
+        setHistory(prev => [
+          ...prev,
+          { prompt, contentType, result: data.image }
+        ]);
+      } else {
+        setResult(data.result || 'No result generated.');
+        setHistory(prev => [
+          ...prev,
+          { prompt, contentType, result: data.result || '' }
+        ]);
+      }
+    } catch (err) {
+      console.error('Error:', err);
+      alert('Something went wrong.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
     const reader = new FileReader();
     reader.onloadend = () => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 300;
-        const scale = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scale;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const base64 = canvas.toDataURL('image/jpeg', 0.6);
-        setUploadedImage(base64);
-      };
-      img.src = reader.result as string;
+      setUploadedImage(reader.result);
     };
     reader.readAsDataURL(file);
   };
 
- const handleGenerate = async () => {
-  if (!prompt.trim() && contentType !== 'Image Caption from Upload') return;
-  setLoading(true);
-  setResult('');
-  setImageUrl('');
-
-  try {
-    // Image Caption from Upload
-    if (uploadedImage && contentType === 'Image Caption from Upload') {
-      const res = await fetch('/api/image-analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: uploadedImage }) // FIXED: key changed from base64Image to image
-      });
-
-      const data = await res.json();
-      setResult(data.result || 'No caption returned.');
-      setHistory([{ prompt: 'Uploaded Image', contentType, result: data.result, date: new Date().toLocaleString() }, ...history]);
-      setLoading(false);
-      return;
-    }
-
-    // All other content types
-    const res = await fetch('/api/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, contentType })
-    });
-
-    const data = await res.json();
-    if (data.image) {
-      setImageUrl(data.image);
-      setHistory([{ prompt, contentType, result: data.image, date: new Date().toLocaleString() }, ...history]);
-    } else {
-      setResult(data.result || 'No result returned.');
-      setHistory([{ prompt, contentType, result: data.result, date: new Date().toLocaleString() }, ...history]);
-    }
-  } catch (err) {
-    console.error('Error:', err);
-    alert('Something went wrong.');
-  } finally {
-    setLoading(false);
-  }
-};
+  const handleVoiceUpload = (e) => {
+    setVoiceFile(e.target.files[0]);
+  };
 
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
@@ -116,40 +109,13 @@ export default function Home() {
     localStorage.removeItem('history');
   };
 
-  const share = (platform: string, content: string) => {
-    const text = encodeURIComponent(content);
-    const url = encodeURIComponent(window.location.href);
-    const links: any = {
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
-      twitter: `https://twitter.com/intent/tweet?text=${text}`,
-      whatsapp: `https://api.whatsapp.com/send?text=${text}`,
-      linkedin: `https://www.linkedin.com/shareArticle?mini=true&url=${url}&summary=${text}`,
-      reddit: `https://www.reddit.com/submit?url=${url}&title=${text}`,
-      pinterest: `https://pinterest.com/pin/create/button/?description=${text}&url=${url}`
-    };
-    window.open(links[platform], '_blank');
+  const share = (platform, content) => {
+    alert(`Share to ${platform}: ${content}`);
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
-      <h1>AI Content Generator</h1>
-
-      <textarea
-        value={prompt}
-        onChange={(e) => setPrompt(e.target.value)}
-        placeholder="Enter your prompt here..."
-        style={{ width: '100%', minHeight: '100px', marginBottom: '1rem' }}
-      />
-
-      <button onClick={handleVoice} style={{ marginBottom: '1rem' }}>🎤 Tap to Speak</button>
-
-      <input type="file" accept="image/*" onChange={handleImageUpload} style={{ marginBottom: '1rem' }} />
-
-      <select
-        value={contentType}
-        onChange={(e) => setContentType(e.target.value)}
-        style={{ width: '100%', padding: '0.5rem', marginBottom: '1rem' }}
-      >
+    <div style={{ padding: '2rem' }}>
+      <select onChange={(e) => setContentType(e.target.value)} value={contentType}>
         <option>#ViralTag</option>
         <option>Keyword Generator</option>
         <option>Amazon Product Optimizer</option>
@@ -168,40 +134,48 @@ export default function Home() {
         <option>WhatsApp Message</option>
         <option>Generate Image</option>
         <option>Image Caption from Upload</option>
+        <option>Voice Prompt</option>
       </select>
 
-      <button onClick={handleGenerate} disabled={loading}>
+      <input value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Enter your prompt..." style={{ width: '100%', padding: '0.5rem', marginTop: '1rem' }} />
+
+      {contentType === 'Image Caption from Upload' && (
+        <input type="file" accept="image/*" onChange={handleImageUpload} style={{ marginTop: '1rem' }} />
+      )}
+
+      {contentType === 'Voice Prompt' && (
+        <input type="file" accept="audio/*" onChange={handleVoiceUpload} style={{ marginTop: '1rem' }} />
+      )}
+
+      <button onClick={handleGenerate} style={{ marginTop: '1rem' }}>
         {loading ? 'Generating...' : 'Generate'}
       </button>
 
       {(result || imageUrl) && (
         <div style={{ marginTop: '2rem' }}>
-          {imageUrl && <img src={imageUrl} alt="Result" style={{ maxWidth: '100%' }} />}
-          {result && <pre style={{ whiteSpace: 'pre-wrap', background: '#f4f4f4', padding: '1rem' }}>{result}</pre>}
-
-          <button onClick={handleDownloadPDF} style={{ marginRight: '10px' }}>Download PDF</button>
-
-          <div style={{ marginTop: '10px' }}>
-            <strong>Share:</strong>
-            <button onClick={() => share('facebook', result)}>Facebook</button>
-            <button onClick={() => share('twitter', result)}>Twitter</button>
-            <button onClick={() => share('whatsapp', result)}>WhatsApp</button>
-            <button onClick={() => share('linkedin', result)}>LinkedIn</button>
-            <button onClick={() => share('reddit', result)}>Reddit</button>
-            <button onClick={() => share('pinterest', result)}>Pinterest</button>
-          </div>
+          {imageUrl && <img src={imageUrl} alt="Generated" style={{ maxWidth: '100%' }} />}
+          {result && <pre style={{ whiteSpace: 'pre-wrap' }}>{result}</pre>}
+          <button onClick={handleDownloadPDF}>Download PDF</button>
         </div>
       )}
+
+      <div style={{ marginTop: '10px' }}>
+        <strong>Share:</strong>
+        <button onClick={() => share('Facebook', result)}>Facebook</button>
+        <button onClick={() => share('Twitter', result)}>Twitter</button>
+        <button onClick={() => share('LinkedIn', result)}>LinkedIn</button>
+        <button onClick={() => share('WhatsApp', result)}>WhatsApp</button>
+      </div>
 
       {history.length > 0 && (
         <div style={{ marginTop: '2rem' }}>
           <h3>History</h3>
           <button onClick={clearHistory}>Clear History</button>
           {history.map((entry, i) => (
-            <div key={i} style={{ marginTop: '1rem', border: '1px solid #ccc', padding: '1rem' }}>
-              <strong>{entry.contentType}</strong> | <em>{entry.date}</em>
+            <div key={i} style={{ marginBottom: '1rem' }}>
+              <strong>{entry.contentType}</strong>
               <p><strong>Prompt:</strong> {entry.prompt}</p>
-              {entry.result.startsWith('http') ? (
+              {entry.result?.startsWith('data:image') ? (
                 <img src={entry.result} alt="Generated" style={{ maxWidth: '100%' }} />
               ) : (
                 <pre style={{ whiteSpace: 'pre-wrap' }}>{entry.result}</pre>
@@ -212,4 +186,13 @@ export default function Home() {
       )}
     </div>
   );
-}
+};
+
+// Backend handler (add to /pages/api/voice-to-text.ts)
+// This uses OpenAI Whisper API or similar service to transcribe audio
+// Make sure you install and configure necessary libraries for file parsing and OpenAI
+
+// If using Next.js API routes, this part goes in a separate file
+
+// In index.tsx, we just export the component
+export default IndexPage;
