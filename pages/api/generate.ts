@@ -8,7 +8,7 @@ type GenerateResult = {
 };
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || ''
+  apiKey: process.env.OPENAI_API_KEY || '',
 });
 
 export default async function handler(
@@ -17,7 +17,7 @@ export default async function handler(
 ) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
-    return res.status(405).json({ error: 'Method Not Allowed' });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const { prompt, contentType } = req.body;
@@ -35,9 +35,10 @@ export default async function handler(
         size: '512x512',
       });
 
-      const imageUrl = imageResponse?.data?.[0]?.url; // Safe access to fix build error
+      const imageUrl = imageResponse?.data?.[0]?.url;
+
       if (!imageUrl) {
-        return res.status(500).json({ error: 'Image generation failed.' });
+        return res.status(500).json({ error: 'Failed to generate image' });
       }
 
       return res.status(200).json({ imageUrl });
@@ -48,20 +49,21 @@ export default async function handler(
       messages: [
         {
           role: 'user',
-          content: `Generate a ${contentType} for this prompt:\n${prompt}`,
+          content: `Generate a ${contentType} based on this prompt: ${prompt}`,
         },
       ],
       max_tokens: 500,
     });
 
-    const result = chatResponse.choices[0]?.message?.content?.trim();
+    const result = chatResponse.choices?.[0]?.message?.content;
+
     if (!result) {
-      return res.status(500).json({ error: 'No response returned from OpenAI.' });
+      return res.status(500).json({ error: 'No result from OpenAI' });
     }
 
     return res.status(200).json({ text: result });
   } catch (error: any) {
-    console.error('OpenAI error (generate.ts):', error);
-    return res.status(500).json({ error: 'Server error during content generation.' });
+    console.error('OpenAI error (generate):', error);
+    return res.status(500).json({ error: 'Server error: ' + error.message });
   }
 }
