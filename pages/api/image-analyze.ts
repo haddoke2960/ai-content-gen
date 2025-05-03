@@ -4,17 +4,17 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method Not Allowed' });
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { base64Image } = req.body;
+  const { base64 } = req.body;
 
-  if (!base64Image || typeof base64Image !== 'string') {
-    return res.status(400).json({ message: 'Invalid image data' });
+  if (!base64 || typeof base64 !== 'string') {
+    return res.status(400).json({ error: 'Invalid or missing image data' });
   }
 
   try {
@@ -30,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             },
             {
               type: 'image_url',
-              image_url: { url: base64Image },
+              image_url: { url: base64 },
             }
           ]
         }
@@ -38,10 +38,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       max_tokens: 300
     });
 
-    const result = response.choices[0]?.message?.content;
-    res.status(200).json({ result });
+    const result = response.choices?.[0]?.message?.content;
+
+    if (!result) {
+      return res.status(500).json({ error: 'No result returned from OpenAI Vision' });
+    }
+
+    return res.status(200).json({ result });
   } catch (error: any) {
-    console.error('Image analysis error:', error);
-    res.status(500).json({ message: 'Failed to analyze image', error: error.message });
+    console.error('OpenAI Vision error:', error);
+    return res.status(500).json({ error: 'Image analysis failed', detail: error.message });
   }
 }
