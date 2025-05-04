@@ -37,7 +37,10 @@ export default function Home() {
   }, [history]);
 
   const handleGenerate = async () => {
-    if ((!prompt.trim() && contentType !== 'Image Caption from Upload') || !file) return;
+    if ((!prompt.trim() && contentType !== 'Image Caption from Upload') || (contentType === 'Image Caption from Upload' && !file)) {
+      setError('Please enter a prompt or upload an image.');
+      return;
+    }
 
     setLoading(true);
     setError('');
@@ -252,7 +255,7 @@ export default function Home() {
             </button>
           </div>
 
-          {history.map((entry, index) => (
+          {history.map((entry) => (
             <div
               key={entry.timestamp}
               style={{
