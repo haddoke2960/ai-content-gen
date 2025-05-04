@@ -22,8 +22,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         {
           role: 'user',
           content: [
-            { type: 'text', text: 'Describe this image for social media or a product listing.' },
-            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
+            {
+              type: 'text',
+              text: 'Describe this image for social media or a product listing.'
+            },
+            {
+              type: 'image_url',
+              image_url: { url: base64 } // FIXED LINE: using already-prefixed base64
+            }
           ]
         }
       ],
