@@ -1,6 +1,4 @@
 // pages/api/image-analyze.ts
-// Handles uploaded image (base64) and sends it to OpenAI Vision model
-
 import type { NextApiRequest, NextApiResponse } from 'next';
 import OpenAI from 'openai';
 
@@ -24,14 +22,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         {
           role: 'user',
           content: [
-            {
-              type: 'text',
-              text: 'Describe this image for social media or product listing.'
-            },
-            {
-              type: 'image_url',
-              image_url: { url: base64 },
-            }
+            { type: 'text', text: 'Describe this image for social media or a product listing.' },
+            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
           ]
         }
       ],
@@ -41,12 +33,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const result = response.choices?.[0]?.message?.content;
 
     if (!result) {
-      return res.status(500).json({ error: 'No result returned from OpenAI Vision' });
+      return res.status(500).json({ error: 'No description returned from OpenAI.' });
     }
 
     return res.status(200).json({ result });
   } catch (error: any) {
     console.error('OpenAI Vision error:', error);
-    return res.status(500).json({ error: 'Image analysis failed', detail: error.message });
+    return res.status(500).json({ error: 'Image captioning failed', detail: error.message });
   }
 }
