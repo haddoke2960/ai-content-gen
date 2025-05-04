@@ -100,11 +100,22 @@ const IndexPage = () => {
     setHistory([]);
     localStorage.removeItem('history');
   };
-
-  const share = (platform: string, content: string) => {
-    alert(`Share to ${platform}: ${content}`);
-  };
-
+const share = async (_platform: string, content: string) => {
+  try {
+    if (navigator.share) {
+      await navigator.share({
+        title: 'Generated Content',
+        text: content,
+        url: window.location.href,
+      });
+    } else {
+      alert('Sharing not supported on this device. Please copy and paste manually.');
+    }
+  } catch (err) {
+    alert('Sharing failed.');
+  }
+};
+  
   return (
     <div style={{ padding: '2rem' }}>
       <select onChange={(e) => setContentType(e.target.value)}>
