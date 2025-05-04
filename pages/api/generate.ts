@@ -30,15 +30,16 @@ export default async function handler(
     if (contentType === 'Generate Image') {
       const imageResponse = await openai.images.generate({
         model: 'dall-e-3',
-        prompt,
+        prompt: prompt.slice(0, 500), // Limits prompt length to avoid errors
         n: 1,
-        size: '512x512',
+        size: '256x256', // Reduced size to prevent large payload issues
       });
 
       const imageUrl = imageResponse?.data?.[0]?.url;
 
       if (!imageUrl) {
-        return res.status(500).json({ error: 'Failed to generate image' });
+        console.error('Image generation failed, no URL:', imageResponse);
+        return res.status(500).json({ error: 'Failed to generate image URL' });
       }
 
       return res.status(200).json({ imageUrl });
@@ -58,12 +59,18 @@ export default async function handler(
     const result = chatResponse.choices?.[0]?.message?.content;
 
     if (!result) {
-      return res.status(500).json({ error: 'No result from OpenAI' });
+      console.error('Chat completion failed, no result:', chatResponse);
+      return res.status(500).json({ error: 'No result returned from OpenAI' });
     }
 
     return res.status(200).json({ result });
   } catch (error: any) {
-    console.error('OpenAI error (generate):', error);
-    return res.status(500).json({ error: 'Server error: ' + error.message });
+    console.error('OpenAI API error:', {
+      message: error.message,
+      status: error.status,
+      details: error,
+    });
+
+    return res.status(500).json({ error: `Server error: ${error.message || 'Unknown error'}` });
   }
 }
