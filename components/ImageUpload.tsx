@@ -11,12 +11,14 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onUpload }) => {
   };
 
   return (
-    <input
-      type="file"
-      accept="image/*"
-      onChange={handleChange}
-      style={{ margin: '10px 0' }}
-    />
+    <div style={{ margin: '1rem 0' }}>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleChange}
+        style={{ display: 'block' }}
+      />
+    </div>
   );
 };
 
