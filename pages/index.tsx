@@ -41,10 +41,10 @@ const IndexPage = () => {
 
     try {
       let res: Response;
-      let data: { result?: string; image?: string };
+      let data: { result?: string; imageUrl?: string };
 
       if (uploadedImage && contentType.includes('Image')) {
-        const base64 = uploadedImage.split(',')[1];
+        const base64 = uploadedImage; // full base64 with prefix
         res = await fetch('/api/image-analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -68,12 +68,17 @@ const IndexPage = () => {
       });
       data = await res.json();
 
-      if (!data.result) {
+      if (!data.result && !data.imageUrl) {
         throw new Error('No result from generation');
       }
 
-      setResult(data.result);
-      setHistory(prev => [...prev, { prompt, contentType, result: data.result }]);
+      if (data.imageUrl) {
+        setImageUrl(data.imageUrl);
+        setHistory(prev => [...prev, { prompt, contentType, imageUrl: data.imageUrl }]);
+      } else {
+        setResult(data.result!);
+        setHistory(prev => [...prev, { prompt, contentType, result: data.result }]);
+      }
     } catch (err) {
       console.error('Error:', err);
       alert('Something went wrong.');
@@ -100,22 +105,23 @@ const IndexPage = () => {
     setHistory([]);
     localStorage.removeItem('history');
   };
-const share = async (_platform: string, content: string) => {
-  try {
-    if (navigator.share) {
-      await navigator.share({
-        title: 'Generated Content',
-        text: content,
-        url: window.location.href,
-      });
-    } else {
-      alert('Sharing not supported on this device. Please copy and paste manually.');
+
+  const share = async (_platform: string, content: string) => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'Generated Content',
+          text: content,
+          url: window.location.href,
+        });
+      } else {
+        alert('Sharing not supported on this device. Please copy and paste manually.');
+      }
+    } catch (err) {
+      alert('Sharing failed.');
     }
-  } catch (err) {
-    alert('Sharing failed.');
-  }
-};
-  
+  };
+
   return (
     <div style={{ padding: '2rem' }}>
       <select onChange={(e) => setContentType(e.target.value)}>
@@ -147,9 +153,10 @@ const share = async (_platform: string, content: string) => {
 
       <button onClick={handleGenerate}>{loading ? 'Generating...' : 'Generate'}</button>
 
-      {result && (
+      {(result || imageUrl) && (
         <div style={{ marginTop: '2rem' }}>
-          <pre style={{ whiteSpace: 'pre-wrap' }}>{result}</pre>
+          {imageUrl && <img src={imageUrl} alt="Generated" style={{ maxWidth: '100%' }} />}
+          {result && <pre style={{ whiteSpace: 'pre-wrap' }}>{result}</pre>}
           <button onClick={handleDownloadPDF}>Download PDF</button>
         </div>
       )}
