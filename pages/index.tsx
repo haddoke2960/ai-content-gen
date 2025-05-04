@@ -2,22 +2,34 @@ import { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import ImageUpload from '../components/ImageUpload';
 
+type ContentType = 
+  | 'ViralTag'
+  | 'Generate Image'
+  | 'Image Caption from Upload'
+  | 'Blog Post'
+  | 'Social Media Post';
+
+type HistoryEntry = {
+  type: ContentType;
+  prompt: string;
+  result?: string;
+  imageUrl?: string;
+  timestamp: number;
+};
+
 export default function Home() {
   const [prompt, setPrompt] = useState('');
-  const [mode, setMode] = useState<'text' | 'image' | 'tags'>('text');
-  const [result, setResult] = useState<string>('');
-  const [imageUrl, setImageUrl] = useState<string>('');
+  const [contentType, setContentType] = useState<ContentType>('ViralTag');
+  const [file, setFile] = useState<File | null>(null);
+  const [result, setResult] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>('');
-  const [history, setHistory] = useState<
-    { type: string; prompt: string; result?: string; imageUrl?: string }[]
-  >([]);
+  const [error, setError] = useState('');
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
 
   useEffect(() => {
     const saved = localStorage.getItem('history');
-    if (saved) {
-      setHistory(JSON.parse(saved));
-    }
+    if (saved) setHistory(JSON.parse(saved));
   }, []);
 
   useEffect(() => {
@@ -25,38 +37,69 @@ export default function Home() {
   }, [history]);
 
   const handleGenerate = async () => {
-    if (!prompt) return;
+    if ((!prompt.trim() && contentType !== 'Image Caption from Upload') || !file) return;
+
     setLoading(true);
     setError('');
     setResult('');
     setImageUrl('');
+
     try {
-      const body: any = { prompt: mode === 'tags' ? `#ViralTag ${prompt}` : prompt };
-      if (mode === 'image') {
-        body.image = true;
+      if (contentType === 'Image Caption from Upload' && file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const res = await fetch('/api/image-analyze', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const { caption, error } = await res.json();
+        if (error || !caption) throw new Error(error || 'Caption generation failed');
+
+        setResult(caption);
+        setHistory(prev => [...prev, {
+          type: contentType,
+          prompt: file.name,
+          result: caption,
+          timestamp: Date.now()
+        }]);
+        return;
       }
+
+      const formattedPrompt = contentType === 'ViralTag'
+        ? `Generate exactly 10 unique, viral hashtags separated by commas about: ${prompt}`
+        : prompt;
+
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ prompt: formattedPrompt, contentType }),
       });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Generation request failed');
-      }
+
       const data = await res.json();
-      if (mode === 'image') {
+      if (data.error) throw new Error(data.error);
+
+      if (data.imageUrl) {
         setImageUrl(data.imageUrl);
-        setHistory((prev) => [...prev, { type: mode, prompt, imageUrl: data.imageUrl }]);
-      } else if (mode === 'tags') {
-        setResult(data.tags);
-        setHistory((prev) => [...prev, { type: mode, prompt, result: data.tags }]);
+        setHistory(prev => [...prev, {
+          type: contentType,
+          prompt,
+          imageUrl: data.imageUrl,
+          timestamp: Date.now()
+        }]);
       } else {
         setResult(data.result);
-        setHistory((prev) => [...prev, { type: mode, prompt, result: data.result }]);
+        setHistory(prev => [...prev, {
+          type: contentType,
+          prompt,
+          result: data.result,
+          timestamp: Date.now()
+        }]);
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred');
+      setError(err.message || 'Generation failed');
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -64,120 +107,176 @@ export default function Home() {
 
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
-    doc.text(result || 'No content generated yet.', 10, 10, { maxWidth: 180 });
-    doc.save('ai-content.pdf');
+    doc.text(result || 'No content generated', 10, 10, { maxWidth: 180 });
+    doc.save('generated-content.pdf');
   };
 
   const shareTo = (platform: string) => {
-    const shareText = encodeURIComponent(result || prompt);
+    const text = encodeURIComponent(result || prompt);
     const url = encodeURIComponent(window.location.href);
-    let shareUrl = '';
-
-    switch (platform) {
-      case 'facebook':
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${shareText}`;
-        break;
-      case 'twitter':
-        shareUrl = `https://twitter.com/intent/tweet?text=${shareText}&url=${url}`;
-        break;
-      case 'linkedin':
-        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
-        break;
-      case 'whatsapp':
-        shareUrl = `https://wa.me/?text=${shareText}%20${url}`;
-        break;
-    }
-    if (shareUrl) {
-      window.open(shareUrl, '_blank');
-    }
+    const shareUrls = {
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`,
+      twitter: `https://twitter.com/intent/tweet?text=${text}&url=${url}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
+      whatsapp: `https://wa.me/?text=${text}%20${url}`
+    };
+    window.open(shareUrls[platform as keyof typeof shareUrls], '_blank');
   };
 
   return (
-    <div style={{ padding: '2rem' }}>
-      <h1>AI Content Generator</h1>
+    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
+      <h1 style={{ marginBottom: '2rem' }}>AI Content Generator</h1>
 
-      <div style={{ margin: '1rem 0' }}>
-        <label htmlFor="mode-select"><strong>Select Mode:</strong> </label>
+      <div style={{ marginBottom: '1.5rem' }}>
         <select 
-          id="mode-select" 
-          value={mode} 
-          onChange={(e) => setMode(e.target.value as 'text' | 'image' | 'tags')}
+          value={contentType}
+          onChange={(e) => setContentType(e.target.value as ContentType)}
+          style={{ padding: '0.5rem', width: '100%' }}
         >
-          <option value="text">Text Generation</option>
-          <option value="image">Image Generation</option>
-          <option value="tags">Viral Tags</option>
+          <option value="ViralTag">#ViralTag Generator</option>
+          <option value="Generate Image">Image Generation</option>
+          <option value="Image Caption from Upload">Image Caption</option>
+          <option value="Blog Post">Blog Post</option>
+          <option value="Social Media Post">Social Media</option>
         </select>
       </div>
 
-      <div style={{ marginBottom: '1rem' }}>
-        <label htmlFor="prompt"><strong>
-          {mode === 'text' && 'Enter a prompt for text generation:'}
-          {mode === 'image' && 'Enter a description for the image:'}
-          {mode === 'tags' && 'Enter a topic to generate viral tags:'}
-        </strong></label><br/>
-        <textarea 
-          id="prompt"
-          rows={4} 
-          value={prompt} 
-          onChange={(e) => setPrompt(e.target.value)} 
-          style={{ width: '100%', maxWidth: '500px' }}
+      {contentType === 'Image Caption from Upload' ? (
+        <ImageUpload onUpload={setFile} />
+      ) : (
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder={
+            contentType === 'ViralTag' 
+              ? 'Enter a topic for viral tags...' 
+              : 'Enter your prompt...'
+          }
+          style={{
+            width: '100%',
+            padding: '0.8rem',
+            marginBottom: '1rem',
+            minHeight: '100px'
+          }}
         />
-      </div>
+      )}
 
-      <button onClick={handleGenerate} disabled={loading}>
+      <button 
+        onClick={handleGenerate}
+        disabled={loading}
+        style={{
+          padding: '0.8rem 1.5rem',
+          background: loading ? '#ccc' : '#0070f3',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer'
+        }}
+      >
         {loading ? 'Generating...' : 'Generate'}
       </button>
 
       {error && (
-        <p style={{ color: 'red', marginTop: '1rem' }}>
+        <div style={{ color: 'red', margin: '1rem 0' }}>
           <strong>Error:</strong> {error}
-        </p>
+        </div>
       )}
 
       {(result || imageUrl) && (
-        <div style={{ marginTop: '1rem' }}>
+        <div style={{ marginTop: '2rem' }}>
           <h3>Result:</h3>
           {imageUrl ? (
-            <img 
-              src={imageUrl} 
-              alt="Generated" 
-              style={{ maxWidth: '100%', height: 'auto', border: '1px solid #ccc' }} 
+            <img
+              src={imageUrl}
+              alt="Generated content"
+              style={{ maxWidth: '100%', margin: '1rem 0' }}
             />
+          ) : contentType === 'ViralTag' ? (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              {result.split(',').map((tag, i) => (
+                <div
+                  key={i}
+                  style={{
+                    padding: '0.3rem 0.6rem',
+                    background: '#f0f0f0',
+                    borderRadius: '20px',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  #{tag.trim()}
+                </div>
+              ))}
+            </div>
           ) : (
-            <p>{result}</p>
+            <pre style={{ whiteSpace: 'pre-wrap' }}>{result}</pre>
           )}
-          <button onClick={handleDownloadPDF}>Download PDF</button>
-          <div style={{ marginTop: '1rem' }}>
-            <strong>Share:</strong>
-            <button onClick={() => shareTo('facebook')}>Facebook</button>
-            <button onClick={() => shareTo('twitter')}>Twitter</button>
-            <button onClick={() => shareTo('linkedin')}>LinkedIn</button>
-            <button onClick={() => shareTo('whatsapp')}>WhatsApp</button>
+
+          <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={handleDownloadPDF}
+              style={{
+                padding: '0.5rem 1rem',
+                background: '#666',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px'
+              }}
+            >
+              Download PDF
+            </button>
+            <button onClick={() => shareTo('facebook')}>Share to Facebook</button>
+            <button onClick={() => shareTo('twitter')}>Share to Twitter</button>
+            <button onClick={() => shareTo('linkedin')}>Share to LinkedIn</button>
           </div>
         </div>
       )}
 
-      <hr style={{ margin: '2rem 0' }} />
-
-      <ImageUpload />
-
       {history.length > 0 && (
-        <div style={{ marginTop: '2rem' }}>
-          <h3>History</h3>
-          <button onClick={() => {
-            setHistory([]);
-            localStorage.removeItem('history');
-          }}>
-            Clear History
-          </button>
-          {history.map((item, index) => (
-            <div key={index} style={{ marginTop: '1rem' }}>
-              <strong>{item.type}</strong><br />
-              <strong>Prompt:</strong> {item.prompt}<br />
-              {item.imageUrl ? (
-                <img src={item.imageUrl} alt="Generated" style={{ maxWidth: '100%' }} />
+        <div style={{ marginTop: '3rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2>History</h2>
+            <button
+              onClick={() => {
+                setHistory([]);
+                localStorage.removeItem('history');
+              }}
+              style={{
+                padding: '0.5rem 1rem',
+                background: '#ff4444',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px'
+              }}
+            >
+              Clear History
+            </button>
+          </div>
+
+          {history.map((entry, index) => (
+            <div
+              key={entry.timestamp}
+              style={{
+                margin: '1rem 0',
+                padding: '1rem',
+                border: '1px solid #eee',
+                borderRadius: '4px'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <strong>{entry.type}</strong>
+                <span style={{ color: '#666', fontSize: '0.9rem' }}>
+                  {new Date(entry.timestamp).toLocaleString()}
+                </span>
+              </div>
+              <p style={{ margin: '0.5rem 0' }}><strong>Prompt:</strong> {entry.prompt}</p>
+              {entry.imageUrl ? (
+                <img
+                  src={entry.imageUrl}
+                  alt="Generated content"
+                  style={{ maxWidth: '200px', marginTop: '0.5rem' }}
+                />
               ) : (
-                <pre>{item.result}</pre>
+                <pre style={{ whiteSpace: 'pre-wrap' }}>{entry.result}</pre>
               )}
             </div>
           ))}
