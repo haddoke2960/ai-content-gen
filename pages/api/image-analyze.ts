@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import OpenAI from 'openai';
 import formidable from 'formidable-serverless';
+import fs from 'fs';
+import OpenAI from 'openai';
 
 export const config = {
   api: {
@@ -17,18 +18,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const form = new formidable.IncomingForm();
 
-  form.parse(req, async (err, fields) => {
+  form.parse(req, async (err, fields, files) => {
     try {
       if (err) {
         console.error('Form parsing error:', err);
         return res.status(500).json({ error: 'Error parsing form data' });
       }
 
-      const base64 = fields.image as string;
-
-      if (!base64 || typeof base64 !== 'string') {
-        return res.status(400).json({ error: 'Invalid image data' });
+      const imageFile = files.file;
+      if (!imageFile || Array.isArray(imageFile)) {
+        return res.status(400).json({ error: 'Image file is missing or invalid' });
       }
+
+      const fileData = fs.readFileSync(imageFile.path);
+      const base64 = `data:${imageFile.type};base64,${fileData.toString('base64')}`;
 
       const response = await openai.chat.completions.create({
         model: 'gpt-4-vision-preview',
