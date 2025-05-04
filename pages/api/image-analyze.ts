@@ -1,6 +1,13 @@
 // pages/api/image-analyze.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import OpenAI from 'openai';
+import formidable from 'formidable-serverless';
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
 
@@ -9,42 +16,51 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { base64 } = req.body;
+  const form = new formidable.IncomingForm();
 
-  if (!base64 || typeof base64 !== 'string') {
-    return res.status(400).json({ error: 'Invalid or missing image data' });
-  }
+  form.parse(req, async (err, fields, files) => {
+    try {
+      if (err) {
+        console.error('Form parsing error:', err);
+        return res.status(500).json({ error: 'Error parsing form data' });
+      }
 
-  try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4-vision-preview',
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: 'Describe this image for social media or a product listing.'
-            },
-            {
-              type: 'image_url',
-              image_url: { url: base64 } // FIXED LINE: using already-prefixed base64
-            }
-          ]
-        }
-      ],
-      max_tokens: 300
-    });
+      const imageBase64 = fields.image?.[0];
 
-    const result = response.choices?.[0]?.message?.content;
+      if (!imageBase64 || typeof imageBase64 !== 'string') {
+        return res.status(400).json({ error: 'Invalid or missing image data' });
+      }
 
-    if (!result) {
-      return res.status(500).json({ error: 'No description returned from OpenAI.' });
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4-vision-preview',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: 'Describe this image for social media or a product listing.',
+              },
+              {
+                type: 'image_url',
+                image_url: { url: imageBase64 },
+              },
+            ],
+          },
+        ],
+        max_tokens: 300,
+      });
+
+      const result = response.choices?.[0]?.message?.content;
+
+      if (!result) {
+        return res.status(500).json({ error: 'No description returned from OpenAI.' });
+      }
+
+      return res.status(200).json({ result });
+    } catch (error: any) {
+      console.error('OpenAI Vision error:', error);
+      return res.status(500).json({ error: 'Image captioning failed', detail: error.message });
     }
-
-    return res.status(200).json({ result });
-  } catch (error: any) {
-    console.error('OpenAI Vision error:', error);
-    return res.status(500).json({ error: 'Image captioning failed', detail: error.message });
-  }
+  });
 }
