@@ -42,15 +42,16 @@ const IndexPage = () => {
     try {
       let res: Response;
       let data: { result?: string; imageUrl?: string };
-if (uploadedImage && contentType.includes('Image')) {
-  const formData = new FormData();
-  formData.append('image', uploadedImage);
 
-  res = await fetch('/api/image-analyze', {
-    method: 'POST',
-    body: formData,
-  });
-      
+      if (uploadedImage && contentType.includes('Image')) {
+        const formData = new FormData();
+        formData.append('image', uploadedImage);
+
+        res = await fetch('/api/image-analyze', {
+          method: 'POST',
+          body: formData,
+        });
+
         data = await res.json();
 
         if (!data.result) {
