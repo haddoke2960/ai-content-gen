@@ -1,76 +1,86 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import OpenAI from 'openai';
+import { Configuration, OpenAIApi } from 'openai';
 
-type GenerateResult = {
-  result?: string;
-  imageUrl?: string;
-  error?: string;
-};
-
-const openai = new OpenAI({
+const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY || '',
 });
+const openai = new OpenAIApi(configuration);
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<GenerateResult>
-) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { prompt, contentType } = req.body;
-
-  if (!prompt || !contentType) {
-    return res.status(400).json({ error: 'Missing prompt or content type' });
+  const { prompt } = req.body;
+  if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+    return res.status(400).json({ error: 'No prompt provided.' });
   }
+  const promptText = prompt.trim();
 
   try {
-    if (contentType === 'Generate Image') {
-      const imageResponse = await openai.images.generate({
-        model: 'dall-e-3',
-        prompt: prompt.slice(0, 500), // Limits prompt length to avoid errors
-        n: 1,
-        size: '256x256', // Reduced size to prevent large payload issues
+    // **Viral Tags Generation Mode** – detect the "#ViralTag" keyword
+    if (promptText.toLowerCase().startsWith('#viraltag')) {
+      // Remove the "#ViralTag" prefix to get the topic
+      const topic = promptText.replace(/^#ViralTag\s*/i, '');
+      const tagPrompt = `Generate 10 viral hashtags relevant to "${topic}". 
+Make sure they are creative, relevant, and varied. 
+Respond with the 10 hashtags, separated by commas, and no other commentary.`;
+
+      // Use a text completion (ChatGPT) to generate the tags
+      const tagResponse = await openai.createChatCompletion({
+        model: 'gpt-3.5-turbo',
+        messages: [{ role: 'user', content: tagPrompt }],
+        temperature: 0.7,
+        max_tokens: 100,
       });
-
-      const imageUrl = imageResponse?.data?.[0]?.url;
-
-      if (!imageUrl) {
-        console.error('Image generation failed, no URL:', imageResponse);
-        return res.status(500).json({ error: 'Failed to generate image URL' });
+      const tagText = tagResponse.data.choices?.[0]?.message?.content;
+      if (!tagText) {
+        return res.status(500).json({ error: 'No tags generated' });
       }
+      // Clean up the output (ensure it's a single comma-separated string)
+      let tags = tagText.trim();
+      // Sometimes the model might output line breaks or numbers – normalize it:
+      tags = tags.replace(/\n/g, ', ').replace(/\s*,\s*$/g, '');
+      return res.status(200).json({ tags });
+    }
 
+    // **Image Generation Mode** – if request explicitly indicates image generation
+    if (req.body.image === true) {
+      const imagePrompt = promptText;
+      const imageResponse = await openai.createImage({
+        prompt: imagePrompt,
+        n: 1,
+        size: '512x512',  // or '1024x1024' for higher resolution
+        response_format: 'url',  // get URL to keep response small
+      });
+      const imageUrl = imageResponse.data.data?.[0]?.url;
+      if (!imageUrl) {
+        return res.status(500).json({ error: 'Image generation failed.' });
+      }
       return res.status(200).json({ imageUrl });
     }
 
-    const chatResponse = await openai.chat.completions.create({
+    // **Text Generation Mode** – default (using ChatGPT for general prompts)
+    const chatResponse = await openai.createChatCompletion({
       model: 'gpt-3.5-turbo',
-      messages: [
-        {
-          role: 'user',
-          content: `Generate a ${contentType} based on this prompt: ${prompt}`,
-        },
-      ],
-      max_tokens: 500,
+      messages: [{ role: 'user', content: promptText }],
+      temperature: 0.7,
+      max_tokens: 1000,
     });
-
-    const result = chatResponse.choices?.[0]?.message?.content;
-
-    if (!result) {
-      console.error('Chat completion failed, no result:', chatResponse);
-      return res.status(500).json({ error: 'No result returned from OpenAI' });
+    const answer = chatResponse.data.choices?.[0]?.message?.content;
+    if (!answer) {
+      return res.status(500).json({ error: 'No result from generation.' });
     }
-
-    return res.status(200).json({ result });
+    res.status(200).json({ result: answer.trim() });
   } catch (error: any) {
-    console.error('OpenAI API error:', {
-      message: error.message,
-      status: error.status,
-      details: error,
-    });
-
-    return res.status(500).json({ error: `Server error: ${error.message || 'Unknown error'}` });
+    console.error('Error in /api/generate:', error);
+    // Extract error info if available from OpenAI error response
+    if (error.response?.data) {
+      const code = error.response.status || 500;
+      const message = error.response.data.error?.message || 'OpenAI API error';
+      return res.status(code).json({ error: message });
+    }
+    res.status(500).json({ error: error.message || 'Internal Server Error' });
   }
 }
