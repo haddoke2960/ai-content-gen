@@ -12,14 +12,10 @@ const IndexPage = () => {
   const [prompt, setPrompt] = useState('');
   const [contentType, setContentType] = useState('');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [voiceFile, setVoiceFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
-  const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('history');
@@ -36,28 +32,8 @@ const IndexPage = () => {
     }
   }, [uploadedImage]);
 
-  const startRecording = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const recorder = new MediaRecorder(stream);
-    setMediaRecorder(recorder);
-    const chunks: Blob[] = [];
-
-    recorder.ondataavailable = e => chunks.push(e.data);
-    recorder.onstop = () => {
-      const blob = new Blob(chunks, { type: 'audio/webm' });
-      setRecordedBlob(blob);
-      setRecordedAudioUrl(URL.createObjectURL(blob));
-    };
-
-    recorder.start();
-  };
-
-  const stopRecording = () => {
-    mediaRecorder?.stop();
-  };
-
   const handleGenerate = async () => {
-    if (!prompt.trim() && !uploadedImage && !voiceFile && !recordedBlob) return;
+    if (!prompt.trim() && !uploadedImage) return;
 
     setLoading(true);
     setResult('');
@@ -65,31 +41,23 @@ const IndexPage = () => {
 
     try {
       let res: Response;
-      let data: { result?: string; text?: string; image?: string };
+      let data: { result?: string; image?: string };
 
       if (uploadedImage && contentType.includes('Image')) {
         const base64 = uploadedImage.split(',')[1];
-        res = await fetch('/api/image', {
+        res = await fetch('/api/image-analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ base64 }),
         });
         data = await res.json();
-        setImageUrl(data.image || '');
-        setHistory(prev => [...prev, { prompt, contentType, imageUrl: data.image }]);
-        return;
-      }
 
-      if ((voiceFile || recordedBlob) && contentType === 'Voice Prompt') {
-        const formData = new FormData();
-        formData.append('file', voiceFile || recordedBlob!);
-        res = await fetch('/api/voice', {
-          method: 'POST',
-          body: formData,
-        });
-        data = await res.json();
-        setResult(data.text || 'No result');
-        setHistory(prev => [...prev, { prompt, contentType, result: data.text }]);
+        if (!data.result) {
+          throw new Error('Image analysis failed');
+        }
+
+        setResult(data.result);
+        setHistory(prev => [...prev, { prompt, contentType, result: data.result }]);
         return;
       }
 
@@ -99,7 +67,12 @@ const IndexPage = () => {
         body: JSON.stringify({ prompt, contentType }),
       });
       data = await res.json();
-      setResult(data.result || 'No result.');
+
+      if (!data.result) {
+        throw new Error('No result from generation');
+      }
+
+      setResult(data.result);
       setHistory(prev => [...prev, { prompt, contentType, result: data.result }]);
     } catch (err) {
       console.error('Error:', err);
@@ -115,10 +88,6 @@ const IndexPage = () => {
     const reader = new FileReader();
     reader.onloadend = () => setUploadedImage(reader.result as string);
     reader.readAsDataURL(file);
-  };
-
-  const handleVoiceUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setVoiceFile(e.target.files?.[0] || null);
   };
 
   const handleDownloadPDF = () => {
@@ -157,7 +126,6 @@ const IndexPage = () => {
         <option>WhatsApp Message</option>
         <option>Generate Image</option>
         <option>Image Caption from Upload</option>
-        <option>Voice Prompt</option>
       </select>
 
       <input value={prompt} onChange={(e) => setPrompt(e.target.value)} />
@@ -166,21 +134,11 @@ const IndexPage = () => {
         <input type="file" accept="image/*" onChange={handleImageUpload} />
       )}
 
-      {contentType === 'Voice Prompt' && (
-        <>
-          <input type="file" accept="audio/*" onChange={handleVoiceUpload} />
-          <button onClick={startRecording}>Record Voice</button>
-          <button onClick={stopRecording}>Stop</button>
-          {recordedAudioUrl && <audio src={recordedAudioUrl} controls />}
-        </>
-      )}
-
       <button onClick={handleGenerate}>{loading ? 'Generating...' : 'Generate'}</button>
 
-      {(result || imageUrl) && (
+      {result && (
         <div style={{ marginTop: '2rem' }}>
-          {imageUrl && <img src={imageUrl} alt="Generated" />}
-          {result && <pre style={{ whiteSpace: 'pre-wrap' }}>{result}</pre>}
+          <pre style={{ whiteSpace: 'pre-wrap' }}>{result}</pre>
           <button onClick={handleDownloadPDF}>Download PDF</button>
         </div>
       )}
