@@ -61,7 +61,7 @@ export default async function handler(
       return res.status(500).json({ error: 'No result from OpenAI' });
     }
 
-    return res.status(200).json({ result }); // ← This matches what the frontend expects
+    return res.status(200).json({ result });
   } catch (error: any) {
     console.error('OpenAI error (generate):', error);
     return res.status(500).json({ error: 'Server error: ' + error.message });
