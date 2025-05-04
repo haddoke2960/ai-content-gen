@@ -28,14 +28,8 @@ const IndexPage = () => {
     localStorage.setItem('history', JSON.stringify(history));
   }, [history]);
 
-  useEffect(() => {
-    if (uploadedImage && contentType === 'Image Caption from Upload') {
-      handleGenerate();
-    }
-  }, [uploadedImage]);
-
   const handleGenerate = async () => {
-    if (!prompt.trim() && !uploadedImage) return;
+    if (!prompt.trim() && !file) return;
 
     setLoading(true);
     setResult('');
@@ -45,9 +39,9 @@ const IndexPage = () => {
       let res: Response;
       let data: { result?: string; imageUrl?: string; caption?: string };
 
-      if (uploadedImage && contentType.includes('Image')) {
+      if (file && contentType.includes('Image')) {
         const formData = new FormData();
-        formData.append('file', dataURLtoBlob(uploadedImage), 'upload.jpg');
+        formData.append('file', file);
 
         res = await fetch('/api/image-analyze', {
           method: 'POST',
@@ -65,11 +59,16 @@ const IndexPage = () => {
         return;
       }
 
+      const formattedPrompt = contentType === 'ViralTag'
+        ? `Generate 10 short, viral, creative tags related to this topic: ${prompt}`
+        : `Generate a ${contentType} based on this prompt: ${prompt}`;
+
       res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, contentType }),
+        body: JSON.stringify({ prompt: formattedPrompt, contentType }),
       });
+
       data = await res.json();
 
       if (!data.result && !data.imageUrl) {
@@ -91,24 +90,9 @@ const IndexPage = () => {
     }
   };
 
-  const dataURLtoBlob = (dataurl: string) => {
-    const arr = dataurl.split(',');
-    const mime = arr[0].match(/:(.*?);/)[1];
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n);
-    }
-    return new Blob([u8arr], { type: mime });
-  };
-
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => setUploadedImage(reader.result as string);
-    reader.readAsDataURL(file);
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) setFile(selectedFile);
   };
 
   const handleDownloadPDF = () => {
@@ -171,7 +155,6 @@ const IndexPage = () => {
 
       <button onClick={handleGenerate}>{loading ? 'Generating...' : 'Generate'}</button>
 
-      {/* Optional extra UI component */}
       <ImageUpload />
 
       {(result || imageUrl) && (
