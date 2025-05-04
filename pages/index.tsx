@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import jsPDF from 'jspdf';
 
-import ImageUpload from '../components/ImageUpload';
-
 type HistoryEntry = {
   prompt: string;
   contentType: string;
