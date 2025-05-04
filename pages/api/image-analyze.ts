@@ -1,64 +1,44 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import formidable from 'formidable';
-import fs from 'fs';
-import OpenAI from 'openai';
+import { useState } from 'react';
 
-export const config = {
-  api: {
-    bodyParser: false
-  }
-};
+export default function ImageUpload() {
+  const [file, setFile] = useState<File | null>(null);
+  const [caption, setCaption] = useState('');
+  const [loading, setLoading] = useState(false);
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || ''
-});
+  const handleUpload = async () => {
+    if (!file) return;
+    setLoading(true);
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+    const formData = new FormData();
+    formData.append('file', file);
 
-  const form = new formidable.IncomingForm({ keepExtensions: true });
+    const response = await fetch('/api/image-analyze', {
+      method: 'POST',
+      body: formData,
+    });
 
-  form.parse(req, async (err, fields, files) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to parse form data' });
-    }
+    const data = await response.json();
+    setCaption(data.caption || 'No caption found');
+    setLoading(false);
+  };
 
-    const imageFile = files?.file?.[0] || files?.file;
-    if (!imageFile) {
-      return res.status(400).json({ error: 'No image file uploaded' });
-    }
+  return (
+    <div>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => setFile(e.target.files?.[0] || null)}
+      />
+      <button onClick={handleUpload} disabled={loading || !file}>
+        {loading ? 'Analyzing...' : 'Get Caption'}
+      </button>
 
-    try {
-      const imageData = fs.readFileSync(imageFile.filepath);
-      const base64Image = imageData.toString('base64');
-
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4-vision-preview',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: 'Describe this image in 1 sentence.' },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:image/jpeg;base64,${base64Image}`
-                }
-              }
-            ]
-          }
-        ],
-        max_tokens: 100
-      });
-
-      const result = response.choices?.[0]?.message?.content || 'No description found';
-      return res.status(200).json({ caption: result });
-    } catch (error: any) {
-      console.error(error);
-      return res.status(500).json({ error: error.message || 'Unknown server error' });
-    }
-  });
+      {caption && (
+        <div>
+          <h3>Caption:</h3>
+          <p>{caption}</p>
+        </div>
+      )}
+    </div>
+  );
 }
