@@ -14,7 +14,7 @@
     "react-dom": "18.2.0",
     "openai": "^4.26.0",
     "firebase": "^10.7.0",
-    "formidable": "^3.6.2"
+    "formidable": "2.0.1"
   },
   "devDependencies": {
     "typescript": "^5.2.2",
