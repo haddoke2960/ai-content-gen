@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import jsPDF from 'jspdf';
 
+import ImageUpload from '../components/ImageUpload';
+
 type HistoryEntry = {
   prompt: string;
   contentType: string;
@@ -41,11 +43,11 @@ const IndexPage = () => {
 
     try {
       let res: Response;
-      let data: { result?: string; imageUrl?: string };
+      let data: { result?: string; imageUrl?: string; caption?: string };
 
       if (uploadedImage && contentType.includes('Image')) {
         const formData = new FormData();
-        formData.append('image', uploadedImage);
+        formData.append('file', dataURLtoBlob(uploadedImage), 'upload.jpg');
 
         res = await fetch('/api/image-analyze', {
           method: 'POST',
@@ -54,12 +56,12 @@ const IndexPage = () => {
 
         data = await res.json();
 
-        if (!data.result) {
+        if (!data.caption) {
           throw new Error('Image analysis failed');
         }
 
-        setResult(data.result);
-        setHistory(prev => [...prev, { prompt, contentType, result: data.result }]);
+        setResult(data.caption);
+        setHistory(prev => [...prev, { prompt, contentType, result: data.caption }]);
         return;
       }
 
@@ -87,6 +89,18 @@ const IndexPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const dataURLtoBlob = (dataurl: string) => {
+    const arr = dataurl.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,6 +140,8 @@ const IndexPage = () => {
 
   return (
     <div style={{ padding: '2rem' }}>
+      <h1>AI Content Generator</h1>
+
       <select onChange={(e) => setContentType(e.target.value)}>
         <option>#ViralTag</option>
         <option>Keyword Generator</option>
@@ -154,6 +170,9 @@ const IndexPage = () => {
       )}
 
       <button onClick={handleGenerate}>{loading ? 'Generating...' : 'Generate'}</button>
+
+      {/* Optional extra UI component */}
+      <ImageUpload />
 
       {(result || imageUrl) && (
         <div style={{ marginTop: '2rem' }}>
