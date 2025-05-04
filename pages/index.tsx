@@ -13,7 +13,7 @@ type HistoryEntry = {
 const IndexPage = () => {
   const [prompt, setPrompt] = useState('');
   const [contentType, setContentType] = useState('');
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState('');
   const [imageUrl, setImageUrl] = useState('');
