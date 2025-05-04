@@ -9,18 +9,18 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "13.4.12",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
+    "next": "^13.4.19",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "openai": "^4.26.0",
     "firebase": "^10.7.0",
-    "formidable": "2.0.1",
+    "formidable": "^3.5.1",
     "jspdf": "^2.5.1"
   },
   "devDependencies": {
     "typescript": "^5.2.2",
     "eslint": "8.50.0",
-    "eslint-config-next": "13.4.12",
+    "eslint-config-next": "13.4.19",
     "@types/react": "^18.2.15",
     "@types/node": "^20.4.2",
     "@types/jspdf": "^2.0.0"
