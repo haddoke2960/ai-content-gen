@@ -24,7 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(500).json({ error: 'Error parsing form data' });
       }
 
-      const base64 = fields.image?.[0];
+      const base64 = fields.image as string;
 
       if (!base64 || typeof base64 !== 'string') {
         return res.status(400).json({ error: 'Invalid image data' });
@@ -36,8 +36,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           {
             role: 'user',
             content: [
-              { type: 'text', text: 'Describe this image for social media or a product listing.' },
-              { type: 'image_url', image_url: { url: base64 } },
+              {
+                type: 'text',
+                text: 'Describe this image for social media or a product listing.',
+              },
+              {
+                type: 'image_url',
+                image_url: { url: base64 },
+              },
             ],
           },
         ],
