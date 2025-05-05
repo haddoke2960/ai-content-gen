@@ -1,22 +1,26 @@
-import React from 'react';
+import React, { useRef } from 'react';
 
-type ImageUploadProps = {
+type Props = {
   onUpload: (file: File) => void;
 };
 
-const ImageUpload: React.FC<ImageUploadProps> = ({ onUpload }) => {
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+const ImageUpload: React.FC<Props> = ({ onUpload }) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) onUpload(file);
+    if (file) {
+      onUpload(file);
+    }
   };
 
   return (
-    <div style={{ margin: '1rem 0' }}>
+    <div>
       <input
         type="file"
         accept="image/*"
-        onChange={handleChange}
-        style={{ display: 'block' }}
+        ref={inputRef}
+        onChange={handleFileChange}
       />
     </div>
   );
