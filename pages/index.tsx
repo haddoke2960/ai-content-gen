@@ -64,10 +64,11 @@ export default function Home() {
         const uploadData = new FormData();
         uploadData.append('file', file);
 
-        const uploadRes = await fetch('/api/blob-upload', {
-          method: 'POST',
-          body: uploadData,
-        });
+        const uploadRes = await fetch('/api/cloudinary-upload', {
+  method: 'POST',
+  body: uploadData,
+});
+const { url: publicImageUrl } = await uploadRes.json();
 
         const { url: publicImageUrl } = await uploadRes.json();
         if (!publicImageUrl) throw new Error('Image upload failed');
