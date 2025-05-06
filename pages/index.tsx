@@ -69,7 +69,7 @@ export default function Home() {
   body: uploadData,
 });
 const { url: publicImageUrl } = await uploadRes.json();
-
+console.log('[frontend] Final image URL:', publicImageUrl);
         if (!publicImageUrl) throw new Error('Image upload failed');
 
         const captionRes = await fetch('/api/image-analyze', {
