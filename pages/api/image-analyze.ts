@@ -1,3 +1,4 @@
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { OpenAI } from 'openai';
 
@@ -35,8 +36,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         {
           role: 'user',
           content: [
-            { type: 'text', text: 'Describe this image in a short, engaging social media caption.' },
-            { type: 'image_url', image_url: { url: imageUrl } },
+            {
+              type: 'text',
+              text: 'You are an AI caption writer. Generate a short, fun, engaging caption for the image that could go viral on Instagram or Twitter. Do not explain — only return the caption.',
+            },
+            {
+              type: 'image_url',
+              image_url: { url: imageUrl },
+            },
           ],
         },
       ],
@@ -51,7 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({ caption });
   } catch (err: any) {
-    console.error('[image-analyze] OpenAI API Error:', err.message || err);
+    console.error('[image-analyze] OpenAI API Error:', err.response?.data || err.message || err);
     return res.status(500).json({ error: 'Caption generation failed' });
   }
 }
