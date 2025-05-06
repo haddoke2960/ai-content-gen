@@ -1,4 +1,3 @@
-
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { OpenAI } from 'openai';
 
@@ -18,17 +17,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Missing image URL' });
   }
 
-  if (
-    !imageUrl.endsWith('.jpg') &&
-    !imageUrl.endsWith('.jpeg') &&
-    !imageUrl.endsWith('.png')
-  ) {
-    console.error('[image-analyze] Unsupported file type:', imageUrl);
-    return res.status(400).json({ error: 'Only JPG and PNG images are supported.' });
+  if (!imageUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+    console.error('[image-analyze] Unsupported file extension:', imageUrl);
+    return res.status(400).json({ error: 'Image must be .jpg, .jpeg, .png, .gif, or .webp' });
   }
 
   try {
-    console.log('[image-analyze] Analyzing image:', imageUrl);
+    console.log('[image-analyze] Analyzing:', imageUrl);
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4-turbo',
@@ -52,14 +47,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const caption = response.choices?.[0]?.message?.content?.trim();
 
     if (!caption) {
-      console.error('[image-analyze] No caption returned from GPT');
-      return res.status(500).json({ error: 'Caption generation failed' });
+      return res.status(500).json({ error: 'No caption returned from GPT-4' });
     }
 
     return res.status(200).json({ caption });
- } catch (err: any) {
-  const openaiError = err?.response?.data || err.message || err;
-  console.error('[image-analyze] OpenAI API Error:', openaiError);
-  return res.status(500).json({ error: `Caption generation failed: ${openaiError}` });
-}
+  } catch (err: any) {
+    const errorMsg = err?.response?.data || err.message || 'Unknown error';
+    console.error('[image-analyze] OpenAI API Error:', errorMsg);
+    return res.status(500).json({ error: `Caption generation failed: ${errorMsg}` });
+  }
 }
