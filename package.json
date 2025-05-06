@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@vercel/blob": "^1.0.1",
     "firebase": "^11.6.1",
     "jspdf": "^3.0.1",
     "next": "15.3.1",
