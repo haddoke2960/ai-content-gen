@@ -17,13 +17,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Missing image URL' });
   }
 
-  if (!imageUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-    console.error('[image-analyze] Unsupported file extension:', imageUrl);
-    return res.status(400).json({ error: 'Image must be .jpg, .jpeg, .png, .gif, or .webp' });
+  // Smart MIME validation using GET + Range
+  try {
+    const headRes = await fetch(imageUrl, {
+      method: 'GET',
+      headers: { Range: 'bytes=0-1' },
+      redirect: 'follow',
+    });
+
+    if (!headRes.ok) {
+      throw new Error(`HTTP error! status: ${headRes.status}`);
+    }
+
+    const contentType = headRes.headers.get('content-type');
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
+    if (!contentType || !allowedTypes.some(type => contentType.startsWith(type))) {
+      console.error('[image-analyze] Invalid content type:', contentType);
+      return res.status(400).json({
+        error: 'Unsupported image type. Only PNG, JPG, GIF, or WEBP allowed.',
+      });
+    }
+  } catch (err: any) {
+    console.error('[image-analyze] Failed to validate image MIME type:', err);
+    return res.status(400).json({
+      error: err.message.includes('HTTP error')
+        ? 'Failed to fetch image for validation'
+        : 'Failed to verify image type before captioning.',
+    });
   }
 
+  // Call OpenAI to generate caption
   try {
-    console.log('[image-analyze] Analyzing:', imageUrl);
+    console.log('[image-analyze] Sending image to GPT-4:', imageUrl);
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4-turbo',
@@ -47,6 +73,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const caption = response.choices?.[0]?.message?.content?.trim();
 
     if (!caption) {
+      console.error('[image-analyze] No caption returned from GPT');
       return res.status(500).json({ error: 'No caption returned from GPT-4' });
     }
 
