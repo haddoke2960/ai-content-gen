@@ -2,12 +2,24 @@ import { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import ImageUpload from '../components/ImageUpload';
 
-type ContentType = 
-  | 'ViralTag'
-  | 'Generate Image'
-  | 'Image Caption from Upload'
+type ContentType =
+  | '#ViralTag'
+  | 'Keyword Generator'
+  | 'Amazon Product Optimizer'
+  | 'Product Comparison'
+  | 'Product Description'
+  | 'TikTok Hook'
+  | 'YouTube Video Description'
+  | 'YouTube Video Title'
+  | 'YouTube Tags'
   | 'Blog Post'
-  | 'Social Media Post';
+  | 'Instagram Caption'
+  | 'Facebook Post'
+  | 'LinkedIn Post'
+  | 'Reddit Post'
+  | 'Tweet'
+  | 'Image Caption'
+  | 'Generate Image';
 
 type HistoryEntry = {
   type: ContentType;
@@ -19,7 +31,7 @@ type HistoryEntry = {
 
 export default function Home() {
   const [prompt, setPrompt] = useState('');
-  const [contentType, setContentType] = useState<ContentType>('ViralTag');
+  const [contentType, setContentType] = useState<ContentType>('#ViralTag');
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState('');
   const [imageUrl, setImageUrl] = useState('');
@@ -37,7 +49,7 @@ export default function Home() {
   }, [history]);
 
   const handleGenerate = async () => {
-    if ((!prompt.trim() && contentType !== 'Image Caption from Upload') || (contentType === 'Image Caption from Upload' && !file)) {
+    if ((!prompt.trim() && contentType !== 'Image Caption') || (contentType === 'Image Caption' && !file)) {
       setError('Please enter a prompt or upload an image.');
       return;
     }
@@ -48,8 +60,7 @@ export default function Home() {
     setImageUrl('');
 
     try {
-      if (contentType === 'Image Caption from Upload' && file) {
-        // Step 1: Upload image to Vercel Blob
+      if (contentType === 'Image Caption' && file) {
         const uploadData = new FormData();
         uploadData.append('file', file);
 
@@ -59,8 +70,8 @@ export default function Home() {
         });
 
         const { url: publicImageUrl } = await uploadRes.json();
+        if (!publicImageUrl) throw new Error('Image upload failed');
 
-        // Step 2: Send to GPT-4 Vision
         const captionRes = await fetch('/api/image-analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -82,9 +93,10 @@ export default function Home() {
         return;
       }
 
-      const formattedPrompt = contentType === 'ViralTag'
-        ? `Generate exactly 10 unique, viral hashtags separated by commas about: ${prompt}`
-        : prompt;
+      const formattedPrompt =
+        contentType === '#ViralTag'
+          ? `Generate exactly 10 unique, viral hashtags separated by commas about: ${prompt}`
+          : prompt;
 
       const res = await fetch('/api/generate', {
         method: 'POST',
@@ -114,7 +126,6 @@ export default function Home() {
       }
     } catch (err: any) {
       setError(err.message || 'Generation failed');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -143,30 +154,55 @@ export default function Home() {
       <h1 style={{ marginBottom: '2rem' }}>AI Content Generator</h1>
 
       <div style={{ marginBottom: '1.5rem' }}>
-        <select 
+        <select
           value={contentType}
           onChange={(e) => setContentType(e.target.value as ContentType)}
           style={{ padding: '0.5rem', width: '100%' }}
         >
-          <option value="ViralTag">#ViralTag Generator</option>
-          <option value="Generate Image">Image Generation</option>
-          <option value="Image Caption from Upload">Image Caption</option>
-          <option value="Blog Post">Blog Post</option>
-          <option value="Social Media Post">Social Media</option>
+          <optgroup label="Hashtag Tools">
+            <option value="#ViralTag">#ViralTag</option>
+            <option value="Keyword Generator">Keyword Generator</option>
+          </optgroup>
+
+          <optgroup label="E-Commerce">
+            <option value="Amazon Product Optimizer">Amazon Product Optimizer</option>
+            <option value="Product Comparison">Product Comparison</option>
+            <option value="Product Description">Product Description</option>
+          </optgroup>
+
+          <optgroup label="Video & Script Writing">
+            <option value="TikTok Hook">TikTok Hook</option>
+            <option value="YouTube Video Description">YouTube Video Description</option>
+            <option value="YouTube Video Title">YouTube Video Title</option>
+            <option value="YouTube Tags">YouTube Tags</option>
+          </optgroup>
+
+          <optgroup label="Social Media Posts">
+            <option value="Instagram Caption">Instagram Caption</option>
+            <option value="Facebook Post">Facebook Post</option>
+            <option value="LinkedIn Post">LinkedIn Post</option>
+            <option value="Reddit Post">Reddit Post</option>
+            <option value="Tweet">Tweet</option>
+          </optgroup>
+
+          <optgroup label="Writing & Content">
+            <option value="Blog Post">Blog Post</option>
+          </optgroup>
+
+          <optgroup label="AI Visual Tools">
+            <option value="Image Caption">Image Caption</option>
+            <option value="Generate Image">Generate Image</option>
+          </optgroup>
         </select>
       </div>
 
-      {contentType === 'Image Caption from Upload' ? (
+      {contentType === 'Image Caption' ? (
         <ImageUpload onUpload={setFile} />
       ) : (
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder={
-            contentType === 'ViralTag' 
-              ? 'Enter a topic for viral tags...' 
-              : 'Enter your prompt...'
-          }
+          placeholder={`Enter your ${contentType.toLowerCase()} prompt...`}
           style={{
             width: '100%',
             padding: '0.8rem',
@@ -176,7 +212,7 @@ export default function Home() {
         />
       )}
 
-      <button 
+      <button
         onClick={handleGenerate}
         disabled={loading}
         style={{
@@ -206,7 +242,7 @@ export default function Home() {
               alt="Generated content"
               style={{ maxWidth: '100%', margin: '1rem 0' }}
             />
-          ) : contentType === 'ViralTag' ? (
+          ) : contentType === '#ViralTag' ? (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
               {result.split(',').map((tag, i) => (
                 <div
