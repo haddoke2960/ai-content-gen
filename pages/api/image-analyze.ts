@@ -1,6 +1,5 @@
-// pages/api/image-analyze.ts
-import { OpenAI } from 'openai';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { OpenAI } from 'openai';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
@@ -11,26 +10,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const { imageUrl } = req.body;
 
-  if (!imageUrl) return res.status(400).json({ error: 'Missing image URL' });
+  if (!imageUrl) {
+    console.error('Missing imageUrl in request body');
+    return res.status(400).json({ error: 'Missing image URL' });
+  }
+
+  console.log('Processing image from URL:', imageUrl);
 
   try {
-    const completion = await openai.chat.completions.create({
+    const response = await openai.chat.completions.create({
       model: 'gpt-4-turbo',
       messages: [
         {
           role: 'user',
           content: [
-            { type: 'text', text: 'Describe this image in a creative caption.' },
+            { type: 'text', text: 'Describe this image in a short, social-media-style caption.' },
             { type: 'image_url', image_url: { url: imageUrl } },
           ],
         },
       ],
     });
 
-    const caption = completion.choices[0].message.content;
-    res.status(200).json({ caption });
-  } catch (e: any) {
-    console.error(e);
-    res.status(500).json({ error: 'Caption generation failed' });
+    const caption = response.choices[0]?.message?.content?.trim();
+
+    if (!caption) {
+      throw new Error('No caption returned from GPT');
+    }
+
+    return res.status(200).json({ caption });
+  } catch (err: any) {
+    console.error('GPT Vision failed:', err.message);
+    return res.status(500).json({ error: 'Caption generation failed' });
   }
 }
