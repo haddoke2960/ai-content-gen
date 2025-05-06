@@ -33,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           content: [
             {
               type: 'text',
-              text: 'You are an AI caption writer. Generate a short, fun, engaging caption for the image that could go viral on Instagram or Twitter. Do not explain — only return the caption.',
+              text: "You're a creative social media caption expert. Look at this image and write a short, emotional, funny, or relatable caption that could go viral. Respond with just the caption — no quotes, no hashtags, no explanation.",
             },
             {
               type: 'image_url',
