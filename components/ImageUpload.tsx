@@ -5,6 +5,8 @@ type Props = {
 };
 
 const ImageUpload: React.FC<Props> = ({ onUpload }) => {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
