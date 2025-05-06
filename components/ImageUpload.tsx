@@ -1,4 +1,5 @@
-import React, { useRef } from 'react';
+import React, { useState, useRef } from 'react';
+
 
 type Props = {
   onUpload: (file: File) => void;
