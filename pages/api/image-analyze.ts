@@ -62,4 +62,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   console.error('[image-analyze] OpenAI API Error:', openaiError);
   return res.status(500).json({ error: `Caption generation failed: ${openaiError}` });
 }
-
+}
