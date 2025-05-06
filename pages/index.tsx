@@ -49,13 +49,24 @@ export default function Home() {
 
     try {
       if (contentType === 'Image Caption from Upload' && file) {
-        const formData = new FormData();
-        formData.append('file', file);
+        // Step 1: Upload to Vercel Blob
+const uploadData = new FormData();
+uploadData.append('file', file);
 
-        const res = await fetch('/api/image-analyze', {
-          method: 'POST',
-          body: formData,
-        });
+const uploadRes = await fetch('/api/blob-upload', {
+  method: 'POST',
+  body: uploadData,
+});
+const { url: publicImageUrl } = await uploadRes.json();
+
+// Step 2: Send image URL to GPT-4 Vision
+const captionRes = await fetch('/api/image-analyze', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ imageUrl: publicImageUrl }),
+});
+
+const { caption, error } = await captionRes.json();
 
         const { caption, error } = await res.json();
         if (error || !caption) throw new Error(error || 'Caption generation failed');
