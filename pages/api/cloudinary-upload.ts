@@ -3,46 +3,74 @@ import { v2 as cloudinary } from 'cloudinary';
 import formidable from 'formidable';
 import fs from 'fs';
 
+// Type definitions for Formidable
+interface FormDataFields {
+  [key: string]: string[];
+}
+
+interface FormDataFiles {
+  file: formidable.File | formidable.File[];
+  [key: string]: formidable.File | formidable.File[] | undefined;
+}
+
 export const config = {
   api: {
     bodyParser: false,
   },
 };
 
-// Cloudinary credentials
+// Cloudinary configuration
 cloudinary.config({
   cloud_name: 'dykeynprc',
   api_key: process.env.CLOUDINARY_API_KEY!,
   api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') return res.status(405).end();
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<{ url?: string; error?: string }>
+) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
-  const form = new formidable.IncomingForm();
+  try {
+    const form = new formidable.IncomingForm();
 
-  form.parse(req, async (err, fields, files) => {
-    if (err || !files.file) {
-      console.error('[cloudinary-upload] Upload parse error:', err);
-      return res.status(400).json({ error: 'Failed to read file.' });
+    const { fields, files } = await new Promise<{
+      fields: FormDataFields;
+      files: FormDataFiles;
+    }>((resolve, reject) => {
+      form.parse(req, (err, fields, files) => {
+        if (err) reject(err);
+        resolve({ fields, files });
+      });
+    });
+
+    if (!files.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    // Type assertion for the files object
     const file = Array.isArray(files.file) ? files.file[0] : files.file;
     const filePath = file.filepath;
 
     try {
       const result = await cloudinary.uploader.upload(filePath, {
         folder: 'ai-content-gen',
-        resource_type: 'image',
+        resource_type: 'auto', // Better than 'image' as it handles more file types
       });
 
       return res.status(200).json({ url: result.secure_url });
-    } catch (uploadError: any) {
-      console.error('[cloudinary-upload] Cloudinary error:', uploadError);
-      return res.status(500).json({ error: 'Image upload to Cloudinary failed.' });
     } finally {
-      fs.unlinkSync(filePath); // clean up temp file
+      // Clean up the temporary file
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
     }
-  });
+  } catch (error) {
+    console.error('[cloudinary-upload] Error:', error);
+    return res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Upload failed' 
+    });
+  }
 }
