@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@vercel/blob": "^1.0.1",
+    "cloudinary": "^2.6.1",
     "firebase": "^11.6.1",
     "jspdf": "^3.0.1",
     "next": "15.3.1",
@@ -18,11 +19,11 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.2.2",
+    "@types/jspdf": "^2.0.0",
+    "@types/node": "^20.4.2",
+    "@types/react": "^18.2.15",
     "eslint": "8.50.0",
     "eslint-config-next": "13.4.19",
-    "@types/react": "^18.2.15",
-    "@types/node": "^20.4.2",
-    "@types/jspdf": "^2.0.0"
+    "typescript": "^5.2.2"
   }
 }
