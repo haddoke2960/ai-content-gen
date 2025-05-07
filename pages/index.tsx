@@ -190,9 +190,8 @@ console.log('[frontend] Final image URL:', publicImageUrl);
           </optgroup>
 
           <optgroup label="AI Visual Tools">
-            <option value="Image Caption">Image Caption</option>
-            <option value="Generate Image">Generate Image</option>
-          </optgroup>
+  <option value="Generate Image">Generate Image</option>
+</optgroup>
         </select>
       </div>
 
