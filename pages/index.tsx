@@ -97,7 +97,17 @@ export default function Home() {
           timestamp: Date.now()
         }]);
       }
-    } catch (err: any) {
+   try {
+  await addDoc(collection(db, 'generatedContent'), {
+    type: contentType,
+    prompt,
+    result: data.result,
+    createdAt: serverTimestamp()
+  });
+} catch (err) {
+  console.error('[Firestore] Failed to save:', err);
+}
+ } catch (err: any) {
       setError(err.message || 'Generation failed');
     } finally {
       setLoading(false);
