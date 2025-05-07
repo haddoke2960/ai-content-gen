@@ -97,6 +97,7 @@ export default function Home() {
           timestamp: Date.now()
         }]);
       }
+console.log('[Firestore] Attempting to save...');
    try {
   await addDoc(collection(db, 'generatedContent'), {
     type: contentType,
