@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { v2 as cloudinary } from 'cloudinary';
-import formidable from 'formidable';
+import formidable, { Fields, Files } from 'formidable';
 import fs from 'fs';
 
 export const config = {
@@ -9,6 +9,7 @@ export const config = {
   },
 };
 
+// Cloudinary credentials
 cloudinary.config({
   cloud_name: 'dykeynprc',
   api_key: process.env.CLOUDINARY_API_KEY!,
@@ -19,7 +20,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== 'POST') return res.status(405).end();
 
   const form = new formidable.IncomingForm();
-form.parse(req, async (err: any, fields: formidable.Fields, files: formidable.Files) => {
+
+  form.parse(req, async (err: any, fields: Fields, files: Files) => {
     if (err || !files.file) {
       console.error('[cloudinary-upload] Upload parse error:', err);
       return res.status(400).json({ error: 'Failed to read file.' });
@@ -39,7 +41,7 @@ form.parse(req, async (err: any, fields: formidable.Fields, files: formidable.Fi
       console.error('[cloudinary-upload] Cloudinary error:', uploadError);
       return res.status(500).json({ error: 'Image upload to Cloudinary failed.' });
     } finally {
-      fs.unlinkSync(filePath);
+      fs.unlinkSync(filePath); // clean up temp file
     }
   });
 }
