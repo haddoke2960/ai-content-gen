@@ -26,6 +26,7 @@ type HistoryEntry = {
   imageUrl?: string;
   timestamp: number;
 };
+
 const speakText = (text: string) => {
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.rate = 1;
@@ -33,6 +34,7 @@ const speakText = (text: string) => {
   utterance.lang = 'en-US';
   speechSynthesis.speak(utterance);
 };
+
 export default function Home() {
   const [prompt, setPrompt] = useState('');
   const [contentType, setContentType] = useState<ContentType>('#ViralTag');
@@ -240,6 +242,7 @@ export default function Home() {
             >
               Download PDF
             </button>
+            <button onClick={() => speakText(result)}>🔊 Listen to this</button>
             <button onClick={() => shareTo('facebook')}>Share to Facebook</button>
             <button onClick={() => shareTo('twitter')}>Share to Twitter</button>
             <button onClick={() => shareTo('linkedin')}>Share to LinkedIn</button>
