@@ -60,18 +60,7 @@ export default function Home() {
     setImageUrl('');
 
     try {
-      if (contentType === 'Image Caption' && file) {
-        const uploadData = new FormData();
-        uploadData.append('file', file);
-
-        const uploadRes = await fetch('/api/cloudinary-upload', {
-  method: 'POST',
-  body: uploadData,
-});
-const { url: publicImageUrl } = await uploadRes.json();
-console.log('[frontend] Final image URL:', publicImageUrl);
-        if (!publicImageUrl) throw new Error('Image upload failed');
-
+     
         const captionRes = await fetch('/api/image-analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
