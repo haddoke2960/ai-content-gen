@@ -41,7 +41,7 @@ export default async function handler(
       fields: FormDataFields;
       files: FormDataFiles;
     }>((resolve, reject) => {
-      form.parse(req, (err, fields, files) => {
+      form.parse(req, (err: any, fields, files) => {
         if (err) reject(err);
         resolve({ fields, files });
       });
