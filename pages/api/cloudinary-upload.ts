@@ -21,7 +21,7 @@ export default async function handler(req: any, res: any) {
 
   const form = new formidable.IncomingForm();
 
-  form.parse(req, async (err, fields, files) => {
+  form.parse(req, async (err: any, fields: any, files: any) => {
     try {
       if (err || !files.file) {
         return res.status(400).json({ error: 'No file uploaded' });
@@ -36,7 +36,7 @@ export default async function handler(req: any, res: any) {
       });
 
       return res.status(200).json({ url: result.secure_url });
-    } catch (error) {
+    } catch (error: any) {
       console.error('[cloudinary-upload] Error:', error);
       return res.status(500).json({ error: error.message || 'Upload failed' });
     } finally {
