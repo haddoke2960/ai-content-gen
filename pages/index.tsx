@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
-import ImageUpload from '../components/ImageUpload';
 
 type ContentType =
   | '#ViralTag'
@@ -18,7 +17,6 @@ type ContentType =
   | 'LinkedIn Post'
   | 'Reddit Post'
   | 'Tweet'
-  | 'Image Caption'
   | 'Generate Image';
 
 type HistoryEntry = {
@@ -32,7 +30,6 @@ type HistoryEntry = {
 export default function Home() {
   const [prompt, setPrompt] = useState('');
   const [contentType, setContentType] = useState<ContentType>('#ViralTag');
-  const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -49,8 +46,8 @@ export default function Home() {
   }, [history]);
 
   const handleGenerate = async () => {
-    if ((!prompt.trim() && contentType !== 'Image Caption') || (contentType === 'Image Caption' && !file)) {
-      setError('Please enter a prompt or upload an image.');
+    if (!prompt.trim()) {
+      setError('Please enter a prompt.');
       return;
     }
 
@@ -60,28 +57,6 @@ export default function Home() {
     setImageUrl('');
 
     try {
-     
-        const captionRes = await fetch('/api/image-analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageUrl: publicImageUrl }),
-        });
-
-        const { caption, error } = await captionRes.json();
-        if (error || !caption) throw new Error(error || 'Caption generation failed');
-
-        setResult(caption);
-        setImageUrl(publicImageUrl);
-        setHistory(prev => [...prev, {
-          type: contentType,
-          prompt: file.name,
-          result: caption,
-          imageUrl: publicImageUrl,
-          timestamp: Date.now()
-        }]);
-        return;
-      }
-
       const formattedPrompt =
         contentType === '#ViralTag'
           ? `Generate exactly 10 unique, viral hashtags separated by commas about: ${prompt}`
@@ -179,26 +154,22 @@ export default function Home() {
           </optgroup>
 
           <optgroup label="AI Visual Tools">
-  <option value="Generate Image">Generate Image</option>
-</optgroup>
+            <option value="Generate Image">Generate Image</option>
+          </optgroup>
         </select>
       </div>
 
-      {contentType === 'Image Caption' ? (
-        <ImageUpload onUpload={setFile} />
-      ) : (
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder={`Enter your ${contentType.toLowerCase()} prompt...`}
-          style={{
-            width: '100%',
-            padding: '0.8rem',
-            marginBottom: '1rem',
-            minHeight: '100px'
-          }}
-        />
-      )}
+      <textarea
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+        placeholder={`Enter your ${contentType.toLowerCase()} prompt...`}
+        style={{
+          width: '100%',
+          padding: '0.8rem',
+          marginBottom: '1rem',
+          minHeight: '100px'
+        }}
+      />
 
       <button
         onClick={handleGenerate}
