@@ -1,17 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { v2 as cloudinary } from 'cloudinary';
-import formidable from 'formidable';
+import formidable, { File } from 'formidable';
 import fs from 'fs';
-
-// Type definitions for Formidable
-interface FormDataFields {
-  [key: string]: string[];
-}
-
-interface FormDataFiles {
-  file: formidable.File | formidable.File[];
-  [key: string]: formidable.File | formidable.File[] | undefined;
-}
 
 export const config = {
   api: {
@@ -19,12 +9,22 @@ export const config = {
   },
 };
 
-// Cloudinary configuration
+// Cloudinary config
 cloudinary.config({
   cloud_name: 'dykeynprc',
   api_key: process.env.CLOUDINARY_API_KEY!,
   api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
+
+// Custom types
+interface FormDataFields {
+  [key: string]: string[];
+}
+
+interface FormDataFiles {
+  file: File | File[];
+  [key: string]: File | File[] | undefined;
+}
 
 export default async function handler(
   req: NextApiRequest,
@@ -57,20 +57,19 @@ export default async function handler(
     try {
       const result = await cloudinary.uploader.upload(filePath, {
         folder: 'ai-content-gen',
-        resource_type: 'auto', // Better than 'image' as it handles more file types
+        resource_type: 'auto',
       });
 
       return res.status(200).json({ url: result.secure_url });
     } finally {
-      // Clean up the temporary file
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
     }
   } catch (error) {
     console.error('[cloudinary-upload] Error:', error);
-    return res.status(500).json({ 
-      error: error instanceof Error ? error.message : 'Upload failed' 
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'Upload failed',
     });
   }
 }
