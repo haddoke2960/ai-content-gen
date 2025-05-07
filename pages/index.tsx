@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
-
+import { db } from '@/lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 type ContentType =
   | '#ViralTag'
   | 'Keyword Generator'
