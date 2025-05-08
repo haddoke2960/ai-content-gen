@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
-import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { supabase } from '@/lib/supabase';
+
 type ContentType =
   | '#ViralTag'
   | 'Keyword Generator'
@@ -97,18 +97,26 @@ export default function Home() {
           timestamp: Date.now()
         }]);
       }
-console.log('[Firestore] Attempting to save...');
-   try {
-  await addDoc(collection(db, 'generatedContent'), {
-    type: contentType,
-    prompt,
-    result: data.result,
-    createdAt: serverTimestamp()
-  });
-} catch (err) {
-  console.error('[Firestore] Failed to save:', err);
-}
- } catch (err: any) {
+
+      // Save to Supabase
+      console.log('[Supabase] Attempting to save...');
+      const { error } = await supabase.from('generated_content').insert([
+        {
+          type: contentType,
+          prompt,
+          result: data.result,
+          image_url: data.imageUrl || null,
+          created_at: new Date().toISOString()
+        }
+      ]);
+
+      if (error) {
+        console.error('[Supabase] Save failed:', error);
+      } else {
+        console.log('[Supabase] Save successful!');
+      }
+
+    } catch (err: any) {
       setError(err.message || 'Generation failed');
     } finally {
       setLoading(false);
