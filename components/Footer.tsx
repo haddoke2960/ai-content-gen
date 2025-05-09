@@ -10,6 +10,9 @@ export default function Footer() {
         <Link href="/terms">
           <a style={{ textDecoration: 'underline' }}>Terms of Use</a>
         </Link>
+<Link href="/contact">
+  <a style={{ textDecoration: 'underline' }}>Contact</a>
+</Link>
       </div>
     </footer>
   );
