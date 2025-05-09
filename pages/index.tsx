@@ -140,9 +140,29 @@ export default function Home() {
     };
     window.open(shareUrls[platform as keyof typeof shareUrls], '_blank');
   };
-
+<div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+  <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+    Create Viral Content with AI
+  </h1>
+  <p style={{ fontSize: '1.1rem', color: '#555', maxWidth: '600px', margin: '0 auto 2rem' }}>
+    Boomline helps creators and sellers generate hashtags, captions, product descriptions, and more — powered by AI.
+  </p>
+  <a
+    href="#generate-section"
+    style={{
+      background: 'black',
+      color: 'white',
+      padding: '0.8rem 1.5rem',
+      borderRadius: '6px',
+      fontWeight: '600',
+      textDecoration: 'none'
+    }}
+  >
+    Try Boomline Free
+  </a>
+</div>
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
+    <div id="generate-section" style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
       <h1 style={{ marginBottom: '2rem' }}>AI Content Generator</h1>
 
       <div style={{ marginBottom: '1.5rem' }}>
