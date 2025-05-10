@@ -82,40 +82,25 @@ export default function Home() {
 
       if (data.imageUrl) {
         setImageUrl(data.imageUrl);
-        setHistory(prev => [...prev, {
-          type: contentType,
-          prompt,
-          imageUrl: data.imageUrl,
-          timestamp: Date.now()
-        }]);
+        setHistory(prev => [...prev, { type: contentType, prompt, imageUrl: data.imageUrl, timestamp: Date.now() }]);
       } else {
         setResult(data.result);
-        setHistory(prev => [...prev, {
-          type: contentType,
-          prompt,
-          result: data.result,
-          timestamp: Date.now()
-        }]);
+        setHistory(prev => [...prev, { type: contentType, prompt, result: data.result, timestamp: Date.now() }]);
       }
 
-      // Save to Supabase
-      console.log('[Supabase] Attempting to save...');
       const { error } = await supabase.from('generated_content').insert([
         {
           type: contentType,
           prompt,
           result: data.result,
           image_url: data.imageUrl || null,
-          created_at: new Date().toISOString()
-        }
+          created_at: new Date().toISOString(),
+        },
       ]);
 
       if (error) {
         console.error('[Supabase] Save failed:', error);
-      } else {
-        console.log('[Supabase] Save successful!');
       }
-
     } catch (err: any) {
       setError(err.message || 'Generation failed');
     } finally {
@@ -136,211 +121,205 @@ export default function Home() {
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`,
       twitter: `https://twitter.com/intent/tweet?text=${text}&url=${url}`,
       linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
-      whatsapp: `https://wa.me/?text=${text}%20${url}`
+      whatsapp: `https://wa.me/?text=${text}%20${url}`,
     };
     window.open(shareUrls[platform as keyof typeof shareUrls], '_blank');
   };
-<div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
-  <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-    Create Viral Content with AI
-  </h1>
-  <p style={{ fontSize: '1.1rem', color: '#555', maxWidth: '600px', margin: '0 auto 2rem' }}>
-    Boomline helps creators and sellers generate hashtags, captions, product descriptions, and more — powered by AI.
-  </p>
-  <a
-    href="#generate-section"
-    style={{
-      background: 'black',
-      color: 'white',
-      padding: '0.8rem 1.5rem',
-      borderRadius: '6px',
-      fontWeight: '600',
-      textDecoration: 'none'
-    }}
-  >
-    Try Boomline Free
-  </a>
-</div>
+
   return (
-    <div id="generate-section" style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
-      <h1 style={{ marginBottom: '2rem' }}>AI Content Generator</h1>
-
-      <div style={{ marginBottom: '1.5rem' }}>
-        <select
-          value={contentType}
-          onChange={(e) => setContentType(e.target.value as ContentType)}
-          style={{ padding: '0.5rem', width: '100%' }}
+    <>
+      {/* Hero Section */}
+      <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+        <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+          Create Viral Content with <span style={{ color: '#0070f3' }}>Boomline</span>
+        </h1>
+        <p style={{ fontSize: '1.1rem', color: '#555', maxWidth: '600px', margin: '0 auto 2rem' }}>
+          Boomline helps creators and sellers generate hashtags, captions, product descriptions, and more — powered by AI.
+        </p>
+        <a
+          href="#generate-section"
+          style={{
+            background: 'black',
+            color: 'white',
+            padding: '0.8rem 1.5rem',
+            borderRadius: '6px',
+            fontWeight: '600',
+            textDecoration: 'none',
+          }}
         >
-          <optgroup label="Hashtag Tools">
-            <option value="#ViralTag">#ViralTag</option>
-            <option value="Keyword Generator">Keyword Generator</option>
-          </optgroup>
-
-          <optgroup label="E-Commerce">
-            <option value="Amazon Product Optimizer">Amazon Product Optimizer</option>
-            <option value="Product Comparison">Product Comparison</option>
-            <option value="Product Description">Product Description</option>
-          </optgroup>
-
-          <optgroup label="Video & Script Writing">
-            <option value="TikTok Hook">TikTok Hook</option>
-            <option value="YouTube Video Description">YouTube Video Description</option>
-            <option value="YouTube Video Title">YouTube Video Title</option>
-            <option value="YouTube Tags">YouTube Tags</option>
-          </optgroup>
-
-          <optgroup label="Social Media Posts">
-            <option value="Instagram Caption">Instagram Caption</option>
-            <option value="Facebook Post">Facebook Post</option>
-            <option value="LinkedIn Post">LinkedIn Post</option>
-            <option value="Reddit Post">Reddit Post</option>
-            <option value="Tweet">Tweet</option>
-          </optgroup>
-
-          <optgroup label="Writing & Content">
-            <option value="Blog Post">Blog Post</option>
-          </optgroup>
-
-          <optgroup label="AI Visual Tools">
-            <option value="Generate Image">Generate Image</option>
-          </optgroup>
-        </select>
+          Try Boomline Free
+        </a>
       </div>
 
-      <textarea
-        value={prompt}
-        onChange={(e) => setPrompt(e.target.value)}
-        placeholder={`Enter your ${contentType.toLowerCase()} prompt...`}
-        style={{
-          width: '100%',
-          padding: '0.8rem',
-          marginBottom: '1rem',
-          minHeight: '100px'
-        }}
-      />
+      {/* Generator Section */}
+      <div id="generate-section" style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
+        <h1 style={{ marginBottom: '2rem' }}>AI Content Generator</h1>
 
-      <button
-        onClick={handleGenerate}
-        disabled={loading}
-        style={{
-          padding: '0.8rem 1.5rem',
-          background: loading ? '#ccc' : '#0070f3',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer'
-        }}
-      >
-        {loading ? 'Generating...' : 'Generate'}
-      </button>
-
-      {error && (
-        <div style={{ color: 'red', margin: '1rem 0' }}>
-          <strong>Error:</strong> {error}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <select
+            value={contentType}
+            onChange={(e) => setContentType(e.target.value as ContentType)}
+            style={{ padding: '0.5rem', width: '100%' }}
+          >
+            <optgroup label="Hashtag Tools">
+              <option value="#ViralTag">#ViralTag</option>
+              <option value="Keyword Generator">Keyword Generator</option>
+            </optgroup>
+            <optgroup label="E-Commerce">
+              <option value="Amazon Product Optimizer">Amazon Product Optimizer</option>
+              <option value="Product Comparison">Product Comparison</option>
+              <option value="Product Description">Product Description</option>
+            </optgroup>
+            <optgroup label="Video & Script Writing">
+              <option value="TikTok Hook">TikTok Hook</option>
+              <option value="YouTube Video Description">YouTube Video Description</option>
+              <option value="YouTube Video Title">YouTube Video Title</option>
+              <option value="YouTube Tags">YouTube Tags</option>
+            </optgroup>
+            <optgroup label="Social Media Posts">
+              <option value="Instagram Caption">Instagram Caption</option>
+              <option value="Facebook Post">Facebook Post</option>
+              <option value="LinkedIn Post">LinkedIn Post</option>
+              <option value="Reddit Post">Reddit Post</option>
+              <option value="Tweet">Tweet</option>
+            </optgroup>
+            <optgroup label="Writing & Content">
+              <option value="Blog Post">Blog Post</option>
+            </optgroup>
+            <optgroup label="AI Visual Tools">
+              <option value="Generate Image">Generate Image</option>
+            </optgroup>
+          </select>
         </div>
-      )}
 
-      {(result || imageUrl) && (
-        <div style={{ marginTop: '2rem' }}>
-          <h3>Result:</h3>
-          {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt="Generated content"
-              style={{ maxWidth: '100%', margin: '1rem 0' }}
-            />
-          ) : contentType === '#ViralTag' ? (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-              {result.split(',').map((tag, i) => (
-                <div
-                  key={i}
-                  style={{
-                    padding: '0.3rem 0.6rem',
-                    background: '#f0f0f0',
-                    borderRadius: '20px',
-                    fontSize: '0.9rem'
-                  }}
-                >
-                  #{tag.trim()}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <pre style={{ whiteSpace: 'pre-wrap' }}>{result}</pre>
-          )}
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder={`Enter your ${contentType.toLowerCase()} prompt...`}
+          style={{ width: '100%', padding: '0.8rem', marginBottom: '1rem', minHeight: '100px' }}
+        />
 
-          <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-            <button
-              onClick={handleDownloadPDF}
-              style={{
-                padding: '0.5rem 1rem',
-                background: '#666',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px'
-              }}
-            >
-              Download PDF
-            </button>
-            <button onClick={() => speakText(result)}>🔊 Listen to this</button>
-            <button onClick={() => shareTo('facebook')}>Share to Facebook</button>
-            <button onClick={() => shareTo('twitter')}>Share to Twitter</button>
-            <button onClick={() => shareTo('linkedin')}>Share to LinkedIn</button>
+        <button
+          onClick={handleGenerate}
+          disabled={loading}
+          style={{
+            padding: '0.8rem 1.5rem',
+            background: loading ? '#ccc' : '#0070f3',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}
+        >
+          {loading ? 'Generating...' : 'Generate'}
+        </button>
+
+        {error && (
+          <div style={{ color: 'red', margin: '1rem 0' }}>
+            <strong>Error:</strong> {error}
           </div>
-        </div>
-      )}
+        )}
 
-      {history.length > 0 && (
-        <div style={{ marginTop: '3rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2>History</h2>
-            <button
-              onClick={() => {
-                setHistory([]);
-                localStorage.removeItem('history');
-              }}
-              style={{
-                padding: '0.5rem 1rem',
-                background: '#ff4444',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px'
-              }}
-            >
-              Clear History
-            </button>
-          </div>
-
-          {history.map((entry) => (
-            <div
-              key={entry.timestamp}
-              style={{
-                margin: '1rem 0',
-                padding: '1rem',
-                border: '1px solid #eee',
-                borderRadius: '4px'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <strong>{entry.type}</strong>
-                <span style={{ color: '#666', fontSize: '0.9rem' }}>
-                  {new Date(entry.timestamp).toLocaleString()}
-                </span>
+        {(result || imageUrl) && (
+          <div style={{ marginTop: '2rem' }}>
+            <h3>Result:</h3>
+            {imageUrl ? (
+              <img src={imageUrl} alt="Generated content" style={{ maxWidth: '100%', margin: '1rem 0' }} />
+            ) : contentType === '#ViralTag' ? (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                {result.split(',').map((tag, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      padding: '0.3rem 0.6rem',
+                      background: '#f0f0f0',
+                      borderRadius: '20px',
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    #{tag.trim()}
+                  </div>
+                ))}
               </div>
-              <p style={{ margin: '0.5rem 0' }}><strong>Prompt:</strong> {entry.prompt}</p>
-              {entry.imageUrl ? (
-                <img
-                  src={entry.imageUrl}
-                  alt="Generated content"
-                  style={{ maxWidth: '200px', marginTop: '0.5rem' }}
-                />
-              ) : (
-                <pre style={{ whiteSpace: 'pre-wrap' }}>{entry.result}</pre>
-              )}
+            ) : (
+              <pre style={{ whiteSpace: 'pre-wrap' }}>{result}</pre>
+            )}
+
+            <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
+              <button
+                onClick={handleDownloadPDF}
+                style={{
+                  padding: '0.5rem 1rem',
+                  background: '#666',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                }}
+              >
+                Download PDF
+              </button>
+              <button onClick={() => speakText(result)}>🔊 Listen to this</button>
+              <button onClick={() => shareTo('facebook')}>Share to Facebook</button>
+              <button onClick={() => shareTo('twitter')}>Share to Twitter</button>
+              <button onClick={() => shareTo('linkedin')}>Share to LinkedIn</button>
             </div>
-          ))}
-        </div>
-      )}
-    </div>
+          </div>
+        )}
+
+        {history.length > 0 && (
+          <div style={{ marginTop: '3rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2>History</h2>
+              <button
+                onClick={() => {
+                  setHistory([]);
+                  localStorage.removeItem('history');
+                }}
+                style={{
+                  padding: '0.5rem 1rem',
+                  background: '#ff4444',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                }}
+              >
+                Clear History
+              </button>
+            </div>
+
+            {history.map((entry) => (
+              <div
+                key={entry.timestamp}
+                style={{
+                  margin: '1rem 0',
+                  padding: '1rem',
+                  border: '1px solid #eee',
+                  borderRadius: '4px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <strong>{entry.type}</strong>
+                  <span style={{ color: '#666', fontSize: '0.9rem' }}>
+                    {new Date(entry.timestamp).toLocaleString()}
+                  </span>
+                </div>
+                <p style={{ margin: '0.5rem 0' }}>
+                  <strong>Prompt:</strong> {entry.prompt}
+                </p>
+                {entry.imageUrl ? (
+                  <img
+                    src={entry.imageUrl}
+                    alt="Generated content"
+                    style={{ maxWidth: '200px', marginTop: '0.5rem' }}
+                  />
+                ) : (
+                  <pre style={{ whiteSpace: 'pre-wrap' }}>{entry.result}</pre>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
   );
 }
