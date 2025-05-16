@@ -44,8 +44,28 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [usageCount, setUsageCount] = useState(0);
+  const [limitReached, setLimitReached] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
+    const userAgent = window.navigator.userAgent;
+    const iOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+    setIsIOS(iOS);
+
+    const today = new Date().toISOString().slice(0, 10);
+    const savedDate = localStorage.getItem('boomline_date');
+    const savedCount = parseInt(localStorage.getItem('boomline_usage') || '0');
+
+    if (savedDate === today) {
+      setUsageCount(savedCount);
+      if (savedCount >= 5) setLimitReached(true);
+    } else {
+      localStorage.setItem('boomline_date', today);
+      localStorage.setItem('boomline_usage', '0');
+    }
+
     const saved = localStorage.getItem('history');
     if (saved) setHistory(JSON.parse(saved));
   }, []);
@@ -59,6 +79,8 @@ export default function Home() {
       setError('Please enter a prompt.');
       return;
     }
+
+    if (limitReached) return;
 
     setLoading(true);
     setError('');
@@ -98,9 +120,13 @@ export default function Home() {
         },
       ]);
 
-      if (error) {
-        console.error('[Supabase] Save failed:', error);
-      }
+      if (error) console.error('[Supabase] Save failed:', error);
+
+      const newCount = usageCount + 1;
+      setUsageCount(newCount);
+      localStorage.setItem('boomline_usage', newCount.toString());
+      if (newCount >= 5) setLimitReached(true);
+
     } catch (err: any) {
       setError(err.message || 'Generation failed');
     } finally {
@@ -127,20 +153,33 @@ export default function Home() {
   };
 
   return (
-    <>
-      {/* Hero Section */}
+    <div style={{ backgroundColor: darkMode ? '#000' : '#fff', color: darkMode ? '#fff' : '#000', minHeight: '100vh' }}>
+      <div style={{ textAlign: 'center', padding: '1rem' }}>
+        <button
+          onClick={() => setDarkMode(!darkMode)}
+          style={{
+            padding: '0.5rem 1rem',
+            border: '1px solid #ccc',
+            borderRadius: '4px',
+            marginBottom: '1rem',
+          }}
+        >
+          Toggle Display Color
+        </button>
+      </div>
+
       <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
         <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
           Create Viral Content with <span style={{ color: '#0070f3' }}>Boomline</span>
         </h1>
-        <p style={{ fontSize: '1.1rem', color: '#555', maxWidth: '600px', margin: '0 auto 2rem' }}>
+        <p style={{ fontSize: '1.1rem', color: darkMode ? '#ccc' : '#555', maxWidth: '600px', margin: '0 auto 2rem' }}>
           Boomline helps creators and sellers generate hashtags, captions, product descriptions, and more — powered by AI.
         </p>
         <a
           href="#generate-section"
           style={{
-            background: 'black',
-            color: 'white',
+            background: darkMode ? '#fff' : '#000',
+            color: darkMode ? '#000' : '#fff',
             padding: '0.8rem 1.5rem',
             borderRadius: '6px',
             fontWeight: '600',
@@ -150,69 +189,96 @@ export default function Home() {
           Try Boomline Free
         </a>
       </div>
-
-      {/* Generator Section */}
       <div id="generate-section" style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
         <h1 style={{ marginBottom: '2rem' }}>AI Content Generator</h1>
 
-        <div style={{ marginBottom: '1.5rem' }}>
-          <select
-            value={contentType}
-            onChange={(e) => setContentType(e.target.value as ContentType)}
-            style={{ padding: '0.5rem', width: '100%' }}
-          >
-            <optgroup label="Hashtag Tools">
-              <option value="#ViralTag">#ViralTag</option>
-              <option value="Keyword Generator">Keyword Generator</option>
-            </optgroup>
-            <optgroup label="E-Commerce">
-              <option value="Amazon Product Optimizer">Amazon Product Optimizer</option>
-              <option value="Product Comparison">Product Comparison</option>
-              <option value="Product Description">Product Description</option>
-            </optgroup>
-            <optgroup label="Video & Script Writing">
-              <option value="TikTok Hook">TikTok Hook</option>
-              <option value="YouTube Video Description">YouTube Video Description</option>
-              <option value="YouTube Video Title">YouTube Video Title</option>
-              <option value="YouTube Tags">YouTube Tags</option>
-            </optgroup>
-            <optgroup label="Social Media Posts">
-              <option value="Instagram Caption">Instagram Caption</option>
-              <option value="Facebook Post">Facebook Post</option>
-              <option value="LinkedIn Post">LinkedIn Post</option>
-              <option value="Reddit Post">Reddit Post</option>
-              <option value="Tweet">Tweet</option>
-            </optgroup>
-            <optgroup label="Writing & Content">
-              <option value="Blog Post">Blog Post</option>
-            </optgroup>
-            <optgroup label="AI Visual Tools">
-              <option value="Generate Image">Generate Image</option>
-            </optgroup>
-          </select>
-        </div>
+        {!limitReached ? (
+          <>
+            <select
+              value={contentType}
+              onChange={(e) => setContentType(e.target.value as ContentType)}
+              style={{ padding: '0.5rem', width: '100%', marginBottom: '1.5rem' }}
+            >
+              <optgroup label="Hashtag Tools">
+                <option value="#ViralTag">#ViralTag</option>
+                <option value="Keyword Generator">Keyword Generator</option>
+              </optgroup>
+              <optgroup label="E-Commerce">
+                <option value="Amazon Product Optimizer">Amazon Product Optimizer</option>
+                <option value="Product Comparison">Product Comparison</option>
+                <option value="Product Description">Product Description</option>
+              </optgroup>
+              <optgroup label="Video & Script Writing">
+                <option value="TikTok Hook">TikTok Hook</option>
+                <option value="YouTube Video Description">YouTube Video Description</option>
+                <option value="YouTube Video Title">YouTube Video Title</option>
+                <option value="YouTube Tags">YouTube Tags</option>
+              </optgroup>
+              <optgroup label="Social Media Posts">
+                <option value="Instagram Caption">Instagram Caption</option>
+                <option value="Facebook Post">Facebook Post</option>
+                <option value="LinkedIn Post">LinkedIn Post</option>
+                <option value="Reddit Post">Reddit Post</option>
+                <option value="Tweet">Tweet</option>
+              </optgroup>
+              <optgroup label="Writing & Content">
+                <option value="Blog Post">Blog Post</option>
+              </optgroup>
+              <optgroup label="AI Visual Tools">
+                <option value="Generate Image">Generate Image</option>
+              </optgroup>
+            </select>
 
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder={`Enter your ${contentType.toLowerCase()} prompt...`}
-          style={{ width: '100%', padding: '0.8rem', marginBottom: '1rem', minHeight: '100px' }}
-        />
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder={`Enter your ${contentType.toLowerCase()} prompt...`}
+              style={{ width: '100%', padding: '0.8rem', marginBottom: '1rem', minHeight: '100px' }}
+            />
 
-        <button
-          onClick={handleGenerate}
-          disabled={loading}
-          style={{
-            padding: '0.8rem 1.5rem',
-            background: loading ? '#ccc' : '#0070f3',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-          }}
-        >
-          {loading ? 'Generating...' : 'Generate'}
-        </button>
+            <button
+              onClick={handleGenerate}
+              disabled={loading}
+              style={{
+                padding: '0.8rem 1.5rem',
+                background: loading ? '#ccc' : '#0070f3',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              {loading ? 'Generating...' : 'Generate'}
+            </button>
+
+            <p style={{ marginTop: '1rem', fontSize: '0.9rem' }}>
+              {5 - usageCount} free generations left today
+            </p>
+          </>
+        ) : (
+          <>
+            <p style={{ color: 'red', fontWeight: 'bold' }}>You’ve reached your daily limit of 5.</p>
+            {!isIOS && (
+              <a
+                href="https://buy.stripe.com/9AQ29m3aLcey6VabIP"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-block',
+                  padding: '12px 24px',
+                  backgroundColor: '#635bff',
+                  color: '#fff',
+                  borderRadius: '8px',
+                  textDecoration: 'none',
+                  fontWeight: 'bold',
+                  marginTop: '16px',
+                }}
+              >
+                Upgrade to Boomline Pro
+              </a>
+            )}
+          </>
+        )}
 
         {error && (
           <div style={{ color: 'red', margin: '1rem 0' }}>
@@ -245,7 +311,7 @@ export default function Home() {
               <pre style={{ whiteSpace: 'pre-wrap' }}>{result}</pre>
             )}
 
-            <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
+            <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button
                 onClick={handleDownloadPDF}
                 style={{
@@ -258,10 +324,11 @@ export default function Home() {
               >
                 Download PDF
               </button>
-              <button onClick={() => speakText(result)}>🔊 Listen to this</button>
+              <button onClick={() => speakText(result)}>🔊 Listen</button>
               <button onClick={() => shareTo('facebook')}>Share to Facebook</button>
               <button onClick={() => shareTo('twitter')}>Share to Twitter</button>
               <button onClick={() => shareTo('linkedin')}>Share to LinkedIn</button>
+              <button onClick={() => shareTo('whatsapp')}>Share to WhatsApp</button>
             </div>
           </div>
         )}
@@ -320,6 +387,6 @@ export default function Home() {
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }
