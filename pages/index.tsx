@@ -76,7 +76,14 @@ useEffect(() => {
   useEffect(() => {
     localStorage.setItem('history', JSON.stringify(history));
   }, [history]);
+useEffect(() => {
+  const isStandalone =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as any).standalone;
 
+  const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  setIsIOS(isStandalone && iOS);
+}, []);
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       setError('Please enter a prompt.');
