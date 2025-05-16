@@ -157,7 +157,6 @@ export default function Home() {
     };
     window.open(shareUrls[platform as keyof typeof shareUrls], '_blank');
   }
-}
     <div style={{ backgroundColor: darkMode ? '#000' : '#fff', color: darkMode ? '#fff' : '#000', minHeight: '100vh' }}>
       <div style={{ textAlign: 'center', padding: '1rem' }}>
         <button
