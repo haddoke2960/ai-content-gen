@@ -117,7 +117,7 @@ export default function Home() {
         setHistory(prev => [...prev, { type: contentType, prompt, result: data.result, timestamp: Date.now() }]);
       }
 
-      const { error } = await supabase.from('generated_content').insert([
+      await supabase.from('generated_content').insert([
         {
           type: contentType,
           prompt,
@@ -126,8 +126,6 @@ export default function Home() {
           created_at: new Date().toISOString(),
         },
       ]);
-
-      if (error) console.error('[Supabase] Save failed:', error);
 
       const newCount = usageCount + 1;
       setUsageCount(newCount);
@@ -156,7 +154,8 @@ export default function Home() {
       whatsapp: `https://wa.me/?text=${text}%20${url}`,
     };
     window.open(shareUrls[platform as keyof typeof shareUrls], '_blank');
-  }
+  };
+  return (
     <div style={{ backgroundColor: darkMode ? '#000' : '#fff', color: darkMode ? '#fff' : '#000', minHeight: '100vh' }}>
       <div style={{ textAlign: 'center', padding: '1rem' }}>
         <button
@@ -204,12 +203,22 @@ export default function Home() {
               onChange={(e) => setContentType(e.target.value as ContentType)}
               style={{ padding: '0.5rem', width: '100%', marginBottom: '1.5rem' }}
             >
-              {/* Add all your options here as before */}
               <option value="#ViralTag">#ViralTag</option>
               <option value="Keyword Generator">Keyword Generator</option>
+              <option value="Amazon Product Optimizer">Amazon Product Optimizer</option>
+              <option value="Product Comparison">Product Comparison</option>
               <option value="Product Description">Product Description</option>
+              <option value="TikTok Hook">TikTok Hook</option>
+              <option value="YouTube Video Description">YouTube Video Description</option>
+              <option value="YouTube Video Title">YouTube Video Title</option>
+              <option value="YouTube Tags">YouTube Tags</option>
+              <option value="Instagram Caption">Instagram Caption</option>
+              <option value="Facebook Post">Facebook Post</option>
+              <option value="LinkedIn Post">LinkedIn Post</option>
+              <option value="Reddit Post">Reddit Post</option>
+              <option value="Tweet">Tweet</option>
+              <option value="Blog Post">Blog Post</option>
               <option value="Generate Image">Generate Image</option>
-              {/* ...rest of your options */}
             </select>
 
             <textarea
@@ -340,4 +349,5 @@ export default function Home() {
         )}
       </div>
     </div>
+  );
 }
