@@ -48,11 +48,14 @@ export default function Home() {
   const [limitReached, setLimitReached] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+useEffect(() => {
+  const isStandalone =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as any).standalone;
 
-  useEffect(() => {
-    const userAgent = window.navigator.userAgent;
-    const iOS = /iPad|iPhone|iPod/.test(userAgent) && !(window as any).MSStream;
-    setIsIOS(iOS);
+  const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  setIsIOS(isStandalone && iOS);
+}, []);
 
     const today = new Date().toISOString().slice(0, 10);
     const savedDate = localStorage.getItem('boomline_date');
