@@ -156,27 +156,7 @@ export default function Home() {
       whatsapp: `https://wa.me/?text=${text}%20${url}`,
     };
     window.open(shareUrls[platform as keyof typeof shareUrls], '_blank');
-  };
-
-  return (
-    <div style={{ backgroundColor: darkMode ? '#000' : '#fff', color: darkMode ? '#fff' : '#000', minHeight: '100vh' }}>
-      <div style={{ textAlign: 'center', padding: '1rem' }}>
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          style={{
-            padding: '0.5rem 1rem',
-            border: '1px solid #ccc',
-            borderRadius: '4px',
-            marginBottom: '1rem',
-          }}
-        >
-          Toggle Display Color
-        </button>
-      </div>
-      {/* ... Rest of your JSX structure ... */}
-    </div>
-      </div>
-  );
+  }
 }
     <div style={{ backgroundColor: darkMode ? '#000' : '#fff', color: darkMode ? '#fff' : '#000', minHeight: '100vh' }}>
       <div style={{ textAlign: 'center', padding: '1rem' }}>
