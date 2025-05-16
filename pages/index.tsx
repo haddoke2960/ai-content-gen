@@ -344,11 +344,8 @@ return (
                 <img src={entry.imageUrl} alt="Generated content" style={{ maxWidth: '200px' }} />
               ) : (
                 <pre style={{ whiteSpace: 'pre-wrap' }}>{entry.result}</pre>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-        </div>
+                      )}
+      </div>
+    </div>
   );
 }
