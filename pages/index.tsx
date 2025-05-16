@@ -51,7 +51,7 @@ export default function Home() {
 
   useEffect(() => {
     const userAgent = window.navigator.userAgent;
-    const iOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+    const iOS = /iPad|iPhone|iPod/.test(userAgent) && !(window as any).MSStream;
     setIsIOS(iOS);
 
     const today = new Date().toISOString().slice(0, 10);
