@@ -175,8 +175,9 @@ export default function Home() {
       </div>
       {/* ... Rest of your JSX structure ... */}
     </div>
-  
-  return (
+      </div>
+  );
+}
     <div style={{ backgroundColor: darkMode ? '#000' : '#fff', color: darkMode ? '#fff' : '#000', minHeight: '100vh' }}>
       <div style={{ textAlign: 'center', padding: '1rem' }}>
         <button
