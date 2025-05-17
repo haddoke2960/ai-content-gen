@@ -221,12 +221,21 @@ export default function Home() {
               <option value="Generate Image">Generate Image</option>
             </select>
 
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder={`Enter your ${contentType.toLowerCase()} prompt...`}
-              style={{ width: '100%', padding: '0.8rem', marginBottom: '1rem', minHeight: '100px' }}
-            />
+          <textarea
+  value={prompt}
+  onChange={(e) => setPrompt(e.target.value)}
+  placeholder={`Enter your ${contentType.toLowerCase()} prompt...`}
+  style={{
+    width: '100%',
+    padding: '1rem',
+    marginBottom: '1rem',
+    minHeight: '100px',
+    border: '1px solid #ccc',
+    borderRadius: '8px',
+    background: darkMode ? '#111' : '#fff',
+    color: darkMode ? '#fff' : '#000',
+  }}
+/>
 
             <button
               onClick={handleGenerate}
@@ -321,14 +330,17 @@ export default function Home() {
 
             {history.map((entry) => (
               <div
-                key={entry.timestamp}
-                style={{
-                  margin: '1rem 0',
-                  padding: '1rem',
-                  border: '1px solid #eee',
-                  borderRadius: '4px',
-                }}
-              >
+  key={entry.timestamp}
+  style={{
+    margin: '1rem 0',
+    padding: '1.5rem',
+    borderRadius: '12px',
+    backgroundColor: darkMode ? '#111' : '#f9f9f9',
+    boxShadow: darkMode
+      ? '0 2px 8px rgba(255, 255, 255, 0.05)'
+      : '0 2px 12px rgba(0, 0, 0, 0.05)',
+  }}
+>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <strong>{entry.type}</strong>
                   <span style={{ color: '#666', fontSize: '0.9rem' }}>
