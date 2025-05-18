@@ -1,5 +1,4 @@
 import { isUserPremium } from '@/lib/checkSubscription';
-import { isUserPremium } from '@/utils/checkSubscription';
 import { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import { supabase } from '@/lib/supabase';
