@@ -72,7 +72,16 @@ export default function Home() {
       localStorage.setItem('boomline_usage', '0');
     }
   }, []);
-
+useEffect(() => {
+  const email = localStorage.getItem('user_email'); // update this if using real auth
+  if (email) {
+    isUserPremium(email).then((isPro) => {
+      if (isPro) {
+        setLimitReached(false); // unlock access
+      }
+    });
+  }
+}, []);
   useEffect(() => {
     const saved = localStorage.getItem('history');
     if (saved) setHistory(JSON.parse(saved));
