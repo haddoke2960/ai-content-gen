@@ -170,7 +170,31 @@ export default function Home() {
           Toggle Display Color
         </button>
       </div>
-
+<header style={{ 
+  background: darkMode ? '#111' : '#f8f8f8', 
+  padding: '1rem 2rem', 
+  borderBottom: '1px solid #ddd',
+  display: 'flex', 
+  alignItems: 'center', 
+  justifyContent: 'space-between' 
+}}>
+  <h2 style={{ 
+    margin: 0, 
+    fontSize: '1.5rem', 
+    color: darkMode ? '#fff' : '#000' 
+  }}>
+    Boomline
+  </h2>
+  <nav>
+    <a href="#generate-section" style={{ 
+      marginLeft: '1rem', 
+      color: darkMode ? '#ccc' : '#333', 
+      textDecoration: 'none' 
+    }}>
+      Generator
+    </a>
+  </nav>
+</header>
       <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
         <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
           Create Viral Content with <span style={{ color: '#0070f3' }}>Boomline</span>
