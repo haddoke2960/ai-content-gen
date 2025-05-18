@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import { supabase } from '@/lib/supabase';
-
+import ResultCard from '@/components/ResultCard';
 type ContentType =
   | '#ViralTag'
   | 'Keyword Generator'
