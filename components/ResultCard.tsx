@@ -20,24 +20,45 @@ const buttonStyle = (darkMode: boolean) => ({
   transition: 'all 0.3s ease',
 });
 
-const ResultCard: React.FC<Props> = ({ result, imageUrl, darkMode, speakText, handleDownloadPDF, shareTo }) => {
+const ResultCard: React.FC<Props> = ({
+  result,
+  imageUrl,
+  darkMode,
+  speakText,
+  handleDownloadPDF,
+  shareTo,
+}) => {
   return (
     <div
       style={{
+        opacity: 0,
+        animation: 'fadeIn 0.6s ease forwards',
         marginTop: '2rem',
         padding: '2rem',
         borderRadius: '16px',
-        background: darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.6)',
+        background: darkMode
+          ? 'rgba(255, 255, 255, 0.05)'
+          : 'rgba(255, 255, 255, 0.6)',
         backdropFilter: 'blur(12px)',
-        boxShadow: darkMode ? '0 4px 12px rgba(255, 255, 255, 0.05)' : '0 4px 12px rgba(0, 0, 0, 0.08)',
+        boxShadow: darkMode
+          ? '0 4px 12px rgba(255, 255, 255, 0.05)'
+          : '0 4px 12px rgba(0, 0, 0, 0.08)',
         border: '1px solid rgba(255, 255, 255, 0.15)',
       }}
     >
-      <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem', fontWeight: 600 }}>Result:</h3>
+      <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem', fontWeight: 600 }}>
+        Result:
+      </h3>
       {imageUrl ? (
-        <img src={imageUrl} alt="Generated content" style={{ maxWidth: '100%', borderRadius: '8px' }} />
+        <img
+          src={imageUrl}
+          alt="Generated content"
+          style={{ maxWidth: '100%', borderRadius: '8px' }}
+        />
       ) : (
-        <pre style={{ whiteSpace: 'pre-wrap', fontSize: '1rem', fontFamily: 'Inter, sans-serif' }}>{result}</pre>
+        <pre style={{ whiteSpace: 'pre-wrap', fontSize: '1rem', fontFamily: 'Inter, sans-serif' }}>
+          {result}
+        </pre>
       )}
 
       <div style={{ marginTop: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
